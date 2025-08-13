@@ -1,0 +1,672 @@
+[
+  {
+    "label": "Lead Owner",
+    "api_name": "Owner",
+    "module": "Leads"
+  },
+  {
+    "label": "First Name",
+    "api_name": "First_Name",
+    "module": "Leads"
+  },
+  {
+    "label": "Last Name",
+    "api_name": "Last_Name",
+    "module": "Leads"
+  },
+  {
+    "label": "Email",
+    "api_name": "Email",
+    "module": "Leads"
+  },
+  {
+    "label": "Phone",
+    "api_name": "Phone",
+    "module": "Leads"
+  },
+  {
+    "label": "Mobile",
+    "api_name": "Mobile",
+    "module": "Leads"
+  },
+  {
+    "label": "Lead Source",
+    "api_name": "Lead_Source",
+    "module": "Leads"
+  },
+  {
+    "label": "Industry",
+    "api_name": "Industry",
+    "module": "Leads"
+  },
+  {
+    "label": "No. of Employees",
+    "api_name": "No_of_Employees",
+    "module": "Leads"
+  },
+  {
+    "label": "Annual Revenue",
+    "api_name": "Annual_Revenue",
+    "module": "Leads"
+  },
+  {
+    "label": "Created By",
+    "api_name": "Created_By",
+    "module": "Leads"
+  },
+  {
+    "label": "Modified By",
+    "api_name": "Modified_By",
+    "module": "Leads"
+  },
+  {
+    "label": "Created Time",
+    "api_name": "Created_Time",
+    "module": "Leads"
+  },
+  {
+    "label": "Modified Time",
+    "api_name": "Modified_Time",
+    "module": "Leads"
+  },
+  {
+    "label": "Full Name",
+    "api_name": "Full_Name",
+    "module": "Leads"
+  },
+  {
+    "label": "City",
+    "api_name": "City",
+    "module": "Leads"
+  },
+  {
+    "label": "State",
+    "api_name": "State",
+    "module": "Leads"
+  },
+  {
+    "label": "Email Opt Out",
+    "api_name": "Email_Opt_Out",
+    "module": "Leads"
+  },
+  {
+    "label": "Salutation",
+    "api_name": "Salutation",
+    "module": "Leads"
+  },
+  {
+    "label": "Last Activity Time",
+    "api_name": "Last_Activity_Time",
+    "module": "Leads"
+  },
+  {
+    "label": "Tag",
+    "api_name": "Tag",
+    "module": "Leads"
+  },
+  {
+    "label": "Unsubscribed Mode",
+    "api_name": "Unsubscribed_Mode",
+    "module": "Leads"
+  },
+  {
+    "label": "Unsubscribed Time",
+    "api_name": "Unsubscribed_Time",
+    "module": "Leads"
+  },
+  {
+    "label": "Notes",
+    "api_name": "Notes",
+    "module": "Leads"
+  },
+  {
+    "label": "Street Address",
+    "api_name": "Street_Address",
+    "module": "Leads"
+  },
+  {
+    "label": "Meeting Date",
+    "api_name": "Meeting_Date",
+    "module": "Leads"
+  },
+  {
+    "label": "Meeting Type",
+    "api_name": "Meeting_Type",
+    "module": "Leads"
+  },
+  {
+    "label": "Channel Partner",
+    "api_name": "Channel_Partner",
+    "module": "Leads"
+  },
+  {
+    "label": "Email Status",
+    "api_name": "zohocheckeremail__Email_Status",
+    "module": "Leads"
+  },
+  {
+    "label": "Secondary Email Status",
+    "api_name": "zohocheckeremail__Secondary_Email_Status",
+    "module": "Leads"
+  },
+  {
+    "label": "Change Log Time",
+    "api_name": "Change_Log_Time__s",
+    "module": "Leads"
+  },
+  {
+    "label": "Organization Type",
+    "api_name": "Category",
+    "module": "Leads"
+  },
+  {
+    "label": "utm_term",
+    "api_name": "utm_term",
+    "module": "Leads"
+  },
+  {
+    "label": "utm_medium",
+    "api_name": "utm_medium",
+    "module": "Leads"
+  },
+  {
+    "label": "utm_campaign",
+    "api_name": "utm_campaign",
+    "module": "Leads"
+  },
+  {
+    "label": "utm_source",
+    "api_name": "utm_source",
+    "module": "Leads"
+  },
+  {
+    "label": "utm_content",
+    "api_name": "utm_content",
+    "module": "Leads"
+  },
+  {
+    "label": "twitterProfileUrl",
+    "api_name": "twitterProfileUrl",
+    "module": "Leads"
+  },
+  {
+    "label": "LinkedIn CompanyUrl",
+    "api_name": "currentCompanyUrl",
+    "module": "Leads"
+  },
+  {
+    "label": "companyWebsite",
+    "api_name": "companyWebsite",
+    "module": "Leads"
+  },
+  {
+    "label": "pastSchool",
+    "api_name": "pastSchool",
+    "module": "Leads"
+  },
+  {
+    "label": "isOpenLink",
+    "api_name": "isOpenLink",
+    "module": "Leads"
+  },
+  {
+    "label": "ScrapeID",
+    "api_name": "ScrapeID",
+    "module": "Leads"
+  },
+  {
+    "label": "currentJobDuration",
+    "api_name": "currentJobDuration",
+    "module": "Leads"
+  },
+  {
+    "label": "location",
+    "api_name": "location",
+    "module": "Leads"
+  },
+  {
+    "label": "headline",
+    "api_name": "headline",
+    "module": "Leads"
+  },
+  {
+    "label": "SalesNavigatorUrl",
+    "api_name": "SalesNavigatorUrl",
+    "module": "Leads"
+  },
+  {
+    "label": "currentCompanyDescription",
+    "api_name": "currentCompanyDescription",
+    "module": "Leads"
+  },
+  {
+    "label": "companyIndustry",
+    "api_name": "companyIndustry",
+    "module": "Leads"
+  },
+  {
+    "label": "SalesNav Search",
+    "api_name": "SalesNav_Search",
+    "module": "Leads"
+  },
+  {
+    "label": "Timestamp",
+    "api_name": "Timestamp",
+    "module": "Leads"
+  },
+  {
+    "label": "isPremium",
+    "api_name": "isPremium",
+    "module": "Leads"
+  },
+  {
+    "label": "Industry LI",
+    "api_name": "Industry_LI",
+    "module": "Leads"
+  },
+  {
+    "label": "LinkedinProfileUrl",
+    "api_name": "LinkedinProfileUrl",
+    "module": "Leads"
+  },
+  {
+    "label": "Value-Based Care",
+    "api_name": "Value_Based_Care",
+    "module": "Leads"
+  },
+  {
+    "label": "GCLID",
+    "api_name": "GCLID",
+    "module": "Leads"
+  },
+  {
+    "label": "ZCAMPAIGNID",
+    "api_name": "ZCAMPAIGNID",
+    "module": "Leads"
+  },
+  {
+    "label": "ADGROUPID",
+    "api_name": "ADGROUPID",
+    "module": "Leads"
+  },
+  {
+    "label": "ADID",
+    "api_name": "ADID",
+    "module": "Leads"
+  },
+  {
+    "label": "KEYWORDID",
+    "api_name": "KEYWORDID",
+    "module": "Leads"
+  },
+  {
+    "label": "Keyword",
+    "api_name": "Keyword",
+    "module": "Leads"
+  },
+  {
+    "label": "Click Type",
+    "api_name": "Click_Type",
+    "module": "Leads"
+  },
+  {
+    "label": "Device Type",
+    "api_name": "Device_Type",
+    "module": "Leads"
+  },
+  {
+    "label": "Ad Network",
+    "api_name": "Ad_Network",
+    "module": "Leads"
+  },
+  {
+    "label": "Search Partner Network",
+    "api_name": "Search_Partner_Network",
+    "module": "Leads"
+  },
+  {
+    "label": "Ad Campaign Name",
+    "api_name": "Ad_Campaign_Name",
+    "module": "Leads"
+  },
+  {
+    "label": "AdGroup Name",
+    "api_name": "AdGroup_Name",
+    "module": "Leads"
+  },
+  {
+    "label": "Ad",
+    "api_name": "Ad",
+    "module": "Leads"
+  },
+  {
+    "label": "GADCONFIGID",
+    "api_name": "GADCONFIGID",
+    "module": "Leads"
+  },
+  {
+    "label": "Ad Click Date",
+    "api_name": "Ad_Click_Date",
+    "module": "Leads"
+  },
+  {
+    "label": "Cost per Click",
+    "api_name": "Cost_per_Click",
+    "module": "Leads"
+  },
+  {
+    "label": "Cost per Conversion",
+    "api_name": "Cost_per_Conversion",
+    "module": "Leads"
+  },
+  {
+    "label": "Conversion Exported On",
+    "api_name": "Conversion_Exported_On",
+    "module": "Leads"
+  },
+  {
+    "label": "Conversion Export Status",
+    "api_name": "Conversion_Export_Status",
+    "module": "Leads"
+  },
+  {
+    "label": "Reason for Conversion Failure",
+    "api_name": "Reason_for_Conversion_Failure",
+    "module": "Leads"
+  },
+  {
+    "label": "Ads Platform",
+    "api_name": "Ad_Source",
+    "module": "Leads"
+  },
+  {
+    "label": "Demo Booked",
+    "api_name": "Demo_Booked",
+    "module": "Leads"
+  },
+  {
+    "label": "Interest",
+    "api_name": "Interest",
+    "module": "Leads"
+  },
+  {
+    "label": "Proposal",
+    "api_name": "Proposal",
+    "module": "Leads"
+  },
+  {
+    "label": "Email 2",
+    "api_name": "Email_2",
+    "module": "Leads"
+  },
+  {
+    "label": "Phone - Company HQ",
+    "api_name": "Phone_2",
+    "module": "Leads"
+  },
+  {
+    "label": "Lead Score ZMA",
+    "api_name": "Lead_Score_ZMA",
+    "module": "Leads"
+  },
+  {
+    "label": "ZMA Member Status",
+    "api_name": "ZMA_Member_Status",
+    "module": "Leads"
+  },
+  {
+    "label": "First Visit",
+    "api_name": "First_Visited_Time",
+    "module": "Leads"
+  },
+  {
+    "label": "Visitor Score",
+    "api_name": "Visitor_Score",
+    "module": "Leads"
+  },
+  {
+    "label": "Referrer",
+    "api_name": "Referrer",
+    "module": "Leads"
+  },
+  {
+    "label": "Average Time Spent (Minutes)",
+    "api_name": "Average_Time_Spent_Minutes",
+    "module": "Leads"
+  },
+  {
+    "label": "Most Recent Visit",
+    "api_name": "Last_Visited_Time",
+    "module": "Leads"
+  },
+  {
+    "label": "First Page Visited",
+    "api_name": "First_Visited_URL",
+    "module": "Leads"
+  },
+  {
+    "label": "Number Of Chats",
+    "api_name": "Number_Of_Chats",
+    "module": "Leads"
+  },
+  {
+    "label": "Days Visited",
+    "api_name": "Days_Visited",
+    "module": "Leads"
+  },
+  {
+    "label": "Marketing Status",
+    "api_name": "Marketing_Status",
+    "module": "Leads"
+  },
+  {
+    "label": "outplay update lead/contact",
+    "api_name": "outplay_update_lead_contact",
+    "module": "Leads"
+  },
+  {
+    "label": "Program",
+    "api_name": "Program",
+    "module": "Leads"
+  },
+  {
+    "label": "App Account Type",
+    "api_name": "App_Account_Type",
+    "module": "Leads"
+  },
+  {
+    "label": "Account Approval",
+    "api_name": "Account_Approval",
+    "module": "Leads"
+  },
+  {
+    "label": "Trial Start Date",
+    "api_name": "Trial_Start_Date",
+    "module": "Leads"
+  },
+  {
+    "label": "Ad ID",
+    "api_name": "Ad_ID",
+    "module": "Leads"
+  },
+  {
+    "label": "Lead Form",
+    "api_name": "Lead_Form",
+    "module": "Leads"
+  },
+  {
+    "label": "Do Not Contact",
+    "api_name": "Do_Not_Contact",
+    "module": "Leads"
+  },
+  {
+    "label": "LinkedIn Connection",
+    "api_name": "LinkedIn_Connected",
+    "module": "Leads"
+  },
+  {
+    "label": "Outcome of meeting",
+    "api_name": "Outcome_of_meeting",
+    "module": "Leads"
+  },
+  {
+    "label": "LinkedIn Connect",
+    "api_name": "LinkedIn_Connect1",
+    "module": "Leads"
+  },
+  {
+    "label": "Locked",
+    "api_name": "Locked__s",
+    "module": "Leads"
+  },
+  {
+    "label": "Marketing ID Date",
+    "api_name": "Marketing_ID_Date",
+    "module": "Leads"
+  },
+  {
+    "label": "Last Enriched Time",
+    "api_name": "Last_Enriched_Time__s",
+    "module": "Leads"
+  },
+  {
+    "label": "Enrich Status",
+    "api_name": "Enrich_Status__s",
+    "module": "Leads"
+  },
+  {
+    "label": "Customer",
+    "api_name": "Customer",
+    "module": "Leads"
+  },
+  {
+    "label": "Sequence",
+    "api_name": "Sequence",
+    "module": "Leads"
+  },
+  {
+    "label": "Lead Type",
+    "api_name": "Lead_Type",
+    "module": "Leads"
+  },
+  {
+    "label": "Last call result",
+    "api_name": "Last_call_outcome",
+    "module": "Leads"
+  },
+  {
+    "label": "Number of Calls",
+    "api_name": "Number_of_Calls",
+    "module": "Leads"
+  },
+  {
+    "label": "Last Call Subject",
+    "api_name": "Last_Call_Subject",
+    "module": "Leads"
+  },
+  {
+    "label": "Last Call owner",
+    "api_name": "Last_Call_owner",
+    "module": "Leads"
+  },
+  {
+    "label": "Last Call type",
+    "api_name": "Last_Call_type",
+    "module": "Leads"
+  },
+  {
+    "label": "Stage - Outplay",
+    "api_name": "Stage_Outplay",
+    "module": "Leads"
+  },
+  {
+    "label": "Last Activity_Time",
+    "api_name": "Last_Activity_Time1",
+    "module": "Leads"
+  },
+  {
+    "label": "Revenue Category",
+    "api_name": "Revenue_Category",
+    "module": "Leads"
+  },
+  {
+    "label": "Current Ownership",
+    "api_name": "Current_Ownership",
+    "module": "Leads"
+  },
+  {
+    "label": "Job Function",
+    "api_name": "Job_Function",
+    "module": "Leads"
+  },
+  {
+    "label": "Management Level",
+    "api_name": "Management_Level",
+    "module": "Leads"
+  },
+  {
+    "label": "ZoomInfo Company Profile URL",
+    "api_name": "ZoomInfo_Company_Profile_URL",
+    "module": "Leads"
+  },
+  {
+    "label": "ZoomInfo Contact Profile URL",
+    "api_name": "ZoomInfo_Contact_Profile_URL",
+    "module": "Leads"
+  },
+  {
+    "label": "Suffix",
+    "api_name": "Salutation1",
+    "module": "Leads"
+  },
+  {
+    "label": "Primary Sub-Industry",
+    "api_name": "Primary_Sub_Industry",
+    "module": "Leads"
+  },
+  {
+    "label": "Contact Accuracy",
+    "api_name": "Contact_Accuracy",
+    "module": "Leads"
+  },
+  {
+    "label": "Department_",
+    "api_name": "Department",
+    "module": "Leads"
+  },
+  {
+    "label": "BDR Owner",
+    "api_name": "BDR_Owner",
+    "module": "Leads"
+  },
+  {
+    "label": "SQL qualification date",
+    "api_name": "SQL_qualification_date",
+    "module": "Leads"
+  },
+  {
+    "label": "Lead Category",
+    "api_name": "Lead_Category",
+    "module": "Leads"
+  },
+  {
+    "label": "Territory BDR",
+    "api_name": "Territory_BDR",
+    "module": "Leads"
+  },
+  {
+    "label": "Territory AE",
+    "api_name": "Territory_AE",
+    "module": "Leads"
+  },
+  {
+    "label": "EHR",
+    "api_name": "EHR",
+    "module": "Leads"
+  },
+  {
+    "label": "Subscriber",
+    "api_name": "Subscribed_to_VBC_Content_Hub",
+    "module": "Leads"
+  }
+]

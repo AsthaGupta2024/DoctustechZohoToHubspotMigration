@@ -1,0 +1,302 @@
+[
+  {
+    "label": "Company",
+    "api_name": "Company",
+    "module": "Leads"
+  },
+  {
+    "label": "Title",
+    "api_name": "Designation",
+    "module": "Leads"
+  },
+  {
+    "label": "Website",
+    "api_name": "Website",
+    "module": "Leads"
+  },
+  {
+    "label": "Lead Status",
+    "api_name": "Lead_Status",
+    "module": "Leads"
+  },
+  {
+    "label": "Zip Code",
+    "api_name": "Zip_Code",
+    "module": "Leads"
+  },
+  {
+    "label": "Lead Creation Date",
+    "api_name": "Date_of_Last_Contact",
+    "module": "Leads"
+  },
+  {
+    "label": "Meeting scheduled",
+    "api_name": "Meeting_scheduled",
+    "module": "Leads"
+  },
+  {
+    "label": "New Meeting",
+    "api_name": "New_Meeting",
+    "module": "Leads"
+  },
+  {
+    "label": "summary",
+    "api_name": "summary",
+    "module": "Leads"
+  },
+  {
+    "label": "Time zone",
+    "api_name": "Time_zone",
+    "module": "Leads"
+  },
+  {
+    "label": "page source",
+    "api_name": "page_source",
+    "module": "Leads"
+  },
+  {
+    "label": "Meeting - Follow-Up",
+    "api_name": "Meeting_Follow_Up",
+    "module": "Leads"
+  },
+  {
+    "label": "Lead Source Type",
+    "api_name": "Lead_Source_Bucket",
+    "module": "Leads"
+  },
+  {
+    "label": "outplay update",
+    "api_name": "outplay_update",
+    "module": "Leads"
+  },
+  {
+    "label": "Last Call start time",
+    "api_name": "Last_Call_start_time",
+    "module": "Leads"
+  },
+  {
+    "label": "Meeting Date Time",
+    "api_name": "Meeting_Date_Time",
+    "module": "Leads"
+  },
+  {
+    "label": "Employee range text",
+    "api_name": "Employee_range_text",
+    "module": "Leads"
+  },
+  {
+    "label": "Facebook Company Profile URL",
+    "api_name": "Facebook_Company_Profile_URL",
+    "module": "Leads"
+  },
+  {
+    "label": "Number of Locations",
+    "api_name": "Number_of_Locations",
+    "module": "Leads"
+  },
+  {
+    "label": "Other Organozation Type",
+    "api_name": "Other_Company_Type",
+    "module": "Leads"
+  },
+  {
+    "label": "No. of Primary Care Clinicians in Organization",
+    "api_name": "No_of_Primary_Care_Clinicians_in_Organization",
+    "module": "Leads"
+  },
+  {
+    "label": "Campaign Name",
+    "api_name": "Campaign_Name",
+    "module": "Leads"
+  },
+  {
+    "label": "techFB",
+    "api_name": "techFB",
+    "module": "Leads"
+  },
+  {
+    "label": "standard form",
+    "api_name": "standard_form",
+    "module": "Leads"
+  },
+  {
+    "label": "Middle Name",
+    "api_name": "Middle_Name",
+    "module": "Leads"
+  },
+  {
+    "label": "Business Model",
+    "api_name": "Business_Model",
+    "module": "Leads"
+  },
+  {
+    "label": "Certified Active Company",
+    "api_name": "Certified_Active_Company",
+    "module": "Leads"
+  },
+  {
+    "label": "ICP",
+    "api_name": "ICP",
+    "module": "Leads"
+  },
+  {
+    "label": "Next Step",
+    "api_name": "Next_Step",
+    "module": "Leads"
+  },
+  {
+    "label": "Lead Source Original",
+    "api_name": "Lead_Source_Original",
+    "module": "Leads"
+  },
+  {
+    "label": "Repeat Lead Trigger Sequence",
+    "api_name": "Repeat_Lead_Trigger_Sequence",
+    "module": "Leads"
+  },
+  {
+    "label": "Repeat_Lead_Sequence",
+    "api_name": "Repeat_Lead_Sequence",
+    "module": "Leads"
+  },
+  {
+    "label": "Meeting Booked",
+    "api_name": "Meeting_Booked",
+    "module": "Leads"
+  },
+  {
+    "label": "BDR Sequence",
+    "api_name": "BDR_Sequence",
+    "module": "Leads"
+  },
+  {
+    "label": "Agreed to receive updates from the VBC content hub",
+    "api_name": "Agreed_to_receive_updates_from_the_VBC_content_hub",
+    "module": "Leads"
+  },
+  {
+    "label": "Terms",
+    "api_name": "Terms",
+    "module": "Leads"
+  },
+  {
+    "label": "Account Name",
+    "api_name": "Account_Name",
+    "module": "Contacts"
+  },
+  {
+    "label": "Title",
+    "api_name": "Title",
+    "module": "Contacts"
+  },
+  {
+    "label": "Assistant",
+    "api_name": "Assistant",
+    "module": "Contacts"
+  },
+  {
+    "label": "Asst Phone",
+    "api_name": "Asst_Phone",
+    "module": "Contacts"
+  },
+  {
+    "label": "Description",
+    "api_name": "Description",
+    "module": "Contacts"
+  },
+  {
+    "label": "Reporting To",
+    "api_name": "Reporting_To",
+    "module": "Contacts"
+  },
+  {
+    "label": "Opportunity Stage",
+    "api_name": "Lead_Stage",
+    "module": "Contacts"
+  },
+  {
+    "label": "Asst Email",
+    "api_name": "Asst_Email",
+    "module": "Contacts"
+  },
+  {
+    "label": "Meeting - Follow-Up",
+    "api_name": "Follow_Up",
+    "module": "Contacts"
+  },
+  {
+    "label": "Summary",
+    "api_name": "Summary",
+    "module": "Contacts"
+  },
+  {
+    "label": "utm_GCLID",
+    "api_name": "utm_GCLID",
+    "module": "Contacts"
+  },
+  {
+    "label": "Creation Date - Lead (old)",
+    "api_name": "Created_Date",
+    "module": "Contacts"
+  },
+  {
+    "label": "Lead Creation Date Time",
+    "api_name": "Lead_Creation_Date",
+    "module": "Contacts"
+  },
+  {
+    "label": "Meeting Scheduled",
+    "api_name": "Meeting_Scheduled",
+    "module": "Contacts"
+  },
+  {
+    "label": "Lead Status",
+    "api_name": "Status",
+    "module": "Contacts"
+  },
+  {
+    "label": "Lead Source Type",
+    "api_name": "Lead_Source_Type",
+    "module": "Contacts"
+  },
+  {
+    "label": "Inbound Lead",
+    "api_name": "Inbound_Lead",
+    "module": "Contacts"
+  },
+  {
+    "label": "Last call result",
+    "api_name": "Last_call_result",
+    "module": "Contacts"
+  },
+  {
+    "label": "Page Source",
+    "api_name": "Page_Source",
+    "module": "Contacts"
+  },
+  {
+    "label": "Lead Owner",
+    "api_name": "Lead_Owner",
+    "module": "Contacts"
+  },
+  {
+    "label": "Time Zone",
+    "api_name": "Time_Zone",
+    "module": "Contacts"
+  },
+  {
+    "label": "Employee range text",
+    "api_name": "Employees_text",
+    "module": "Contacts"
+  },
+  {
+    "label": "Department_",
+    "api_name": "Department1",
+    "module": "Contacts"
+  },
+  {
+    "label": "Send to ClientSuccess? 1=Y 0=N",
+    "api_name": "Send_to_ClientSuccess_1_Y_0_N",
+    "module": "Contacts"
+  }
+]

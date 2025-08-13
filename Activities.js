@@ -1,11 +1,6 @@
 const express = require("express");
 const axios = require("axios");
-const qs = require("qs");
 require("dotenv").config();
-let currentAccessToken = null;
-let refreshToken = null;
-let refreshTimeout = null;
-let tokenExpiryTime = null;
 const app = express();
 const hsHelpers = require('./hshelpers.js');
 const BASE_URI = process.env.BASE_URI;
@@ -13,298 +8,16 @@ const FormData = require("form-data");
 const path = require("path");
 const fs = require("fs");
 const DESTINATION_ACCESS_TOKEN = process.env.DESTINATION_ACCESS_TOKEN;
-// const EMAILS_FILE_PATH = path.join(__dirname, 'emails.json');
 const EMAILS_LOG_FILE = path.join(__dirname, "zoho-emails.json");
 const NOTES_LOG_FILE = "zoho_contact_notes_log.json"; // Local log
-const TICKET_LOG_FILE = "zoho_ticket_log.json"; // Local log
 app.use(express.json());
 
-//function of access token
-async function getZohoAccessToken() {
-  const url = "https://accounts.zoho.com/oauth/v2/token"; // use zoho.in if you're in India
-  const data = qs.stringify({
-    client_id: process.env.ZOHO_CLIENT_ID,
-    client_secret: process.env.ZOHO_CLIENT_SECRET,
-    //  redirect_uri: process.env.ZOHO_REDIRECT_URL,
-    code: process.env.Code, // <-- Fix this env var casing
-    grant_type: "authorization_code",
-  });
-  // console.log("data", data);
 
-  try {
-    const response = await axios.post(url, data, {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    });
-    console.log("response", response.data);
-    const { access_token, refresh_token, expires_in } = response.data;
+async function processNotesForContacts(objectType,data, SOURCE_ACCESS_TOKEN,existingOpportunityId) {
 
-    console.log("✅ Zoho access token retrieved successfully");
-    console.log("access_token:", access_token);
-    console.log("refresh_token:", refresh_token);
-
-    // 🟢 Update global values
-    currentAccessToken = access_token;
-    refreshToken = refresh_token;
-    tokenExpiryTime = Date.now() + (expires_in - 60) * 1000;
-
-    return { access_token, refresh_token, expires_in };
-  } catch (error) {
-    console.error("❌ Error fetching Zoho access token:", error.response?.data || error.message);
-    throw new Error("Failed to get Zoho access token");
-  }
-}
-async function refreshAccessToken() {
-  const url = "https://accounts.zoho.com/oauth/v2/token"; // make sure this matches with the token creation domain
-  if (!refreshToken) {
-    throw new Error("❌ Missing refresh token. Cannot refresh access token.");
-  }
-
-  const data = qs.stringify({
-    grant_type: "refresh_token",
-    client_id: process.env.ZOHO_CLIENT_ID,
-    client_secret: process.env.ZOHO_CLIENT_SECRET,
-    refresh_token: refreshToken,
-  });
-
-  try {
-    const response = await axios.post(url, data, {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    });
-
-    const { access_token, expires_in } = response.data;
-
-    // 🟢 Save updated access token globally
-    currentAccessToken = access_token;
-    tokenExpiryTime = Date.now() + (expires_in - 60) * 1000;
-
-    console.log("✅ Refreshed Zoho access_token. Expires in:", expires_in, "seconds");
-
-    if (refreshTimeout) clearTimeout(refreshTimeout);
-    refreshTimeout = setTimeout(refreshAccessToken, (expires_in - 60) * 1000);
-
-    return access_token;
-  } catch (error) {
-    console.error("❌ Error auto-refreshing access token:", error.response?.data || error.message);
-    throw new Error("Access token refresh failed."); // Do not return null
-  }
-}
-app.get("/zoho/contacts", async (req, res) => {
-  try {
-  // let tokenObj = await getZohoAccessToken();
-  // console.log("tokenObj", tokenObj);
-  // let access_token = tokenObj.access_token;
-  let access_token = '1000.dd6b97f718611dc0f7dfe29228e6f497.7f23f69f69dd9a19db1496f998b353b3';
-  console.log("access_token", access_token);
-  await fetchAndSyncContactsFromZoho(access_token);
-    res.status(200).json({
-      message: "Fetched and synced Zoho contacts successfully",
-    });
-  } catch (error) {
-    console.error("Failed to fetch contacts:", error.response?.data || error.message);
-    res.status(500).json({
-      message: "Error fetching contacts from Zoho",
-      error: error.response?.data || error.message,
-    });
-  }
-});
-async function syncContactData(datas, access_token) {
-  for (const data of datas) {
-    // console.log("🔄 Processing contact:", data.Email);
-
-    try {
-      if (!data.Email) {
-        console.warn("⚠️ Skipping contact because email is missing:", data);
-        continue;
-      }
-
-      const existingContactId = await hsHelpers.searchContactInHubSpot(data.Email);
-
-      console.log("🔍 Existing HubSpot Contact ID:", existingContactId);
-
-      const contactPayload = {
-        properties: {
-          firstname: data.First_Name || '',
-          lastname: data.Last_Name || '',
-          email: data.Email,
-          account_approval:data.account_approval,
-          ad:data.ad,
-          ad_campaign_name:data.ad_campaign_name,
-          ad_click_date:data.ad_click_date,
-          
-
-
-
-
-        },
-      };
-
-      if (existingContactId) {
-        // ✅ Update existing contact
-        const updateRes = await axios.patch(
-          `https://api.hubapi.com/crm/v3/objects/contacts/${existingContactId}`,
-          contactPayload,
-          {
-            headers: {
-              Authorization: `Bearer ${DESTINATION_ACCESS_TOKEN}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        console.log(`✅ Contact ${data.Email} updated successfully.`);
-      } else {
-        // ✅ Create new contact
-        const createRes = await axios.post(
-          "https://api.hubapi.com/crm/v3/objects/contacts",
-          contactPayload,
-          {
-            headers: {
-              Authorization: `Bearer ${DESTINATION_ACCESS_TOKEN}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        console.log(`✅ Contact ${data.Email} created successfully.`);
-      }
-
-      // 👉 You can process related objects below
-      // await processNotesForContacts(data, access_token,existingContactId);
-      // await processTasksForContacts(data, access_token);
-      // await processCallsForContacts(data, access_token);
-      // await processMeetingsForContacts(data, access_token);
-      // await processEmailsForContacts(data, access_token, existingContactId);
-
-
-    } catch (err) {
-      console.error(`❌ Error processing contact: ${data.Email || "unknown"}`);
-      if (err.response) {
-        console.error("Status:", err.response.status);
-        console.error("Details:", JSON.stringify(err.response.data, null, 2));
-      } else {
-        console.error("Error:", err.message);
-      }
-      continue; // move to next contact
-    }
-  }
-}
-
-async function fetchAndSyncContactsFromZoho(access_token) {
-  let page = 1;
-  let moreRecords = true;
-  console.log("access_token", access_token);
-  if (!access_token) {
-    throw new Error("Access token not available.");
-  }
-
-  do {
-  //  const url = `https://www.zohoapis.com/crm/v2/Contacts?page=${page}&per_page=5`;
-      const url = 'https://www.zohoapis.com/crm/v2/Contacts/4582160000170022041'
-    try {
-      console.log(`Fetching Contacts - Page: ${page}`);
-      console.log("access_token", access_token);
-      const response = await axios.get(url, {
-        headers: {
-          Authorization: `Zoho-oauthtoken ${access_token}`,
-        },
-      });
-      // console.log("response", response.data);
-      const { data, info } = response.data;
-      console.log(`Fetched ${data.length} contacts from page ${page}`);
-
-      await syncContactData(data, access_token);
-
-      moreRecords = info?.more_records || false;
-      page += 1;
-
-      const remaining = response.headers['x-ratelimit-remaining'];
-      if (remaining && parseInt(remaining) <= 1) {
-        console.warn(`⛔ Rate limit almost reached on page ${page}. Stopping further requests.`);
-        break;
-      }
-
-    } catch (error) {
-      const errData = error.response?.data;
-
-      if (errData?.code === "INVALID_TOKEN") {
-        console.warn("⚠️ Access token invalid. Refreshing and retrying...");
-        access_token = await refreshAccessToken();
-        continue;
-      }
-
-      if (
-        errData?.code === "RATE_LIMIT_EXCEEDED" ||
-        errData?.message?.toLowerCase().includes("rate limit")
-      ) {
-        console.error(`Rate limit hit on page ${page}. Stopping.`);
-        break;
-      }
-
-      if (errData?.code === 'TOO_MANY_REQUESTS') {
-        console.error(`HubSpot rate limit hit while syncing. Stopping.`);
-        break;
-      }
-
-      console.error("Unhandled error fetching contacts:", errData || error.message);
-      throw error;
-    }
-
-  } while (moreRecords);
-}
-
-// async function fetchAndSyncContactsFromZoho() {
-//   let page = 100;
-//   let moreRecords = true;
-
-//   let tokenObj = await getZohoAccessToken();
-//   let access_token = tokenObj.access_token;
-//   console.log("access_token", access_token);
-//   // let access_token = '1000.2cdad119e64bd38fcbe7979e95c0eab3.642fbcbbd37e156b33cefd0d15b57f06'
-//   if (!access_token) {
-//     throw new Error("Access token not available.");
-//   }
-
-//   do {
-//     const url = `https://www.zohoapis.com/crm/v2/Contacts?page=${page}&per_page=5`;
-//     // const contactId = "540502000027206114"; // test ID
-//     // const url = `https://www.zohoapis.in/crm/v2/Contacts/${contactId}`;
-
-//     try {
-//       console.log("Fetching Contacts - Page:", page);
-//       console.log("ac", access_token);
-//       const response = await axios.get(url, {
-//         headers: {
-//           Authorization: `Zoho-oauthtoken ${access_token}`,
-//         }
-//       });
-//       // console.log("response", response.data);
-//       const { data, info } = response.data;
-//       // console.log(`Fetched ${data.length} contacts from page ${page}`);
-
-//       // 👉 Sync immediately
-//       await syncContactData(data, access_token);
-
-//       moreRecords = info?.more_records || false;
-//       page += 1;
-
-
-
-//     } catch (error) {
-//       const errData = error.response?.data;
-//       console.log("Error Response:", errData)
-//       // console.error("Unhandled error fetching contacts:", errData || error.message);
-//       throw error;
-//     }
-
-// } 
-//   while (moreRecords);
-// }
-
-async function processNotesForContacts(data, SOURCE_ACCESS_TOKEN,existingOpportunityId) {
-   const email = data.Email;
-   const notes = await fetchNotesWithAttachmentsFromZohoContacts(data.id, SOURCE_ACCESS_TOKEN,existingOpportunityId);
+  const email = data.Email;
+  console.log("email-------->", email);
+  const notes = await fetchNotesWithAttachmentsFromZohoContacts(objectType,data.id, SOURCE_ACCESS_TOKEN,existingOpportunityId);
   // await syncNotesWithHubSpot(email, notes);
 }
 // async function fetchNotesFromZoho(contactId, SOURCE_ACCESS_TOKEN) {
@@ -407,11 +120,12 @@ async function processNotesForContacts(data, SOURCE_ACCESS_TOKEN,existingOpportu
 //     }
 //   }
 // }
-async function fetchNotesWithAttachmentsFromZohoContacts(contactId, zohoAccessToken, existingOpportunityId) {
+async function fetchNotesWithAttachmentsFromZohoContacts(objectType,contactId, zohoAccessToken, existingOpportunityId) {
+  console.log("objectType", objectType);
   console.log("📌 Fetching notes for contactId:", contactId);
   const allNotes = [];
-  const notesUrl = `https://www.zohoapis.com/crm/v2/Contacts/${contactId}/Notes`;
-
+  const notesUrl = `https://www.zohoapis.com/crm/v2/${objectType}/${contactId}/Notes`;
+  
   try {
     const response = await axios.get(notesUrl, {
       headers: {
@@ -425,9 +139,9 @@ async function fetchNotesWithAttachmentsFromZohoContacts(contactId, zohoAccessTo
       console.log("❌ No notes found for contact ID:", contactId);
       return allNotes;
     }
-   //     // ✅ Filter: Only include notes where $se_module is 'Contacts'
-    const notes = allNotes.filter(note => note.$se_module === 'Deals');
-
+    // ✅ Filter: Only include notes where $se_module is 'Contacts'
+    const notes = allNotes.filter(note => note.$se_module === 'Leads');
+    console.log(`✅ Fetched ${notes.length} note(s) for contact ID: ${contactId}`);
     // Optional: Log skipped notes
     allNotes
       .filter(note => note.$se_module !== 'Contacts')
@@ -520,18 +234,17 @@ async function fetchNotesWithAttachmentsFromZohoContacts(contactId, zohoAccessTo
 
   return allNotes;
 }
-async function processTasksForContacts(data, SOURCE_ACCESS_TOKEN) {
+async function processTasksForContacts(objectType,data, SOURCE_ACCESS_TOKEN,existingOpportunityId) {
   console.log("data------------------------>", data);
-  // console.log("SOURCE_ACCESS_TOKEN", SOURCE_ACCESS_TOKEN);
   const email = data.Email;
   // console.log("email-------->", email);
-  const tasks = await fetchTasksFromZoho(data.id, SOURCE_ACCESS_TOKEN);
+  const tasks = await fetchTasksFromZoho(objectType,data.id, SOURCE_ACCESS_TOKEN);
   // Sync only the current note with HubSpot or perform further processing
   await syncTasksWithHubSpot(email, tasks);
 }
-async function fetchTasksFromZoho(contactId, SOURCE_ACCESS_TOKEN) {
+async function fetchTasksFromZoho(objectType,contactId, SOURCE_ACCESS_TOKEN) {
   try {
-    const url = `https://www.zohoapis.com/crm/v2/Contacts/${contactId}/Tasks`;
+    const url = `https://www.zohoapis.com/crm/v2/${objectType}/${contactId}/Tasks`;
 
     const response = await axios.get(url, {
       headers: {
@@ -545,13 +258,13 @@ async function fetchTasksFromZoho(contactId, SOURCE_ACCESS_TOKEN) {
       console.log("No tasks associated with this contact.");
       return [];
     }
-
+    // console.log("objecttype", objectType);
     // ✅ Filter: Only include tasks where $se_module is 'Contacts'
-    const filteredTaskAssociations = associatedTasks.filter(task => task.$se_module === 'Contacts');
+    const filteredTaskAssociations = associatedTasks.filter(task => task.$se_module === "Leads");
 
     // Optional: Log skipped tasks
     associatedTasks
-      .filter(task => task.$se_module !== 'Contacts')
+      .filter(task => task.$se_module !== "Leads")
       .forEach(task => {
         console.log(`⏭️ Skipped task ${task.id} - Module: ${task.$se_module}`);
       });
@@ -1332,196 +1045,6 @@ async function createNoteInHubSpot(objectId, noteContent) {
   }
 }
 
-async function  processTicketsForContacts(data, SOURCE_ACCESS_TOKEN) {
-   const email = data.Email;
-  // console.log("email-------->", email);
-  const tickets=await fetchTicketsFromZohoDesk(SOURCE_ACCESS_TOKEN);
-  // Sync only the current note with HubSpot or perform further processing
-  // await syncTicketsWithHubSpot(email, meetings);
-}
-
-app.get("/zoho/tickets", async (req, res) => {
-  try {
-  // let tokenObj = await getZohoAccessToken();
-  // console.log("tokenObj", tokenObj);
-  // let access_token = tokenObj.access_token;
-  let access_token = '1000.dd6b97f718611dc0f7dfe29228e6f497.7f23f69f69dd9a19db1496f998b353b3';
-  console.log("access_token", access_token);
-  await fetchTicketsFromZohoDesk(access_token);
-    res.status(200).json({
-      message: "Fetched and synced Zoho contacts successfully",
-    });
-  } catch (error) {
-    console.error("Failed to fetch contacts:", error.response?.data || error.message);
-    res.status(500).json({
-      message: "Error fetching contacts from Zoho",
-      error: error.response?.data || error.message,
-    });
-  }
-});
-
-async function fetchTicketsFromZohoDesk(accessToken) {
-  console.log("🎟️ Fetching tickets from Zoho Desk...");
-
-  const url = `https://desk.zoho.com/api/v1/tickets?limit=10`;
-
-  try {
-    const response = await axios.get(url, {
-      headers: {
-        Authorization: `Zoho-oauthtoken ${accessToken}`,
-      },
-    });
-
-    const { data: tickets, info } = response.data;
-    console.log("📦 Raw tickets response:", tickets);
-    console.log(`📄 Pagination Info:`, info);
-
-    fs.writeFileSync(TICKET_LOG_FILE, JSON.stringify(tickets, null, 2));
-
-    if (!tickets || tickets.length === 0) {
-      console.log("📭 No tickets found.");
-      return [];
-    }
-
-    const formattedTickets = tickets.map(ticket => ({
-      id: ticket.id,
-      subject: ticket.subject || "No Subject",
-      departmentId: ticket.departmentId,
-      contactId: ticket.contactId,
-      status: ticket.status,
-      priority: ticket.priority,
-      createdTime: ticket.createdTime,
-      dueDate: ticket.dueDate,
-      channel: ticket.channel,
-    }));
-
-    console.log(`✅ Fetched ${formattedTickets.length} tickets from Zoho Desk.`);
-
-    // Now sync the tickets to destination system
-    await syncticketData(formattedTickets, accessToken);
-
-    return formattedTickets;
-
-  } catch (error) {
-    console.error(
-      `❌ Error fetching tickets from Zoho Desk:`,
-      error.response ? error.response.data : error.message
-    );
-    return [];
-  }
-}
-async function syncticketData(tickets, accessToken) {
-  try {
-    console.log("🔄 Syncing tickets to HubSpot...");
-
-    for (const ticket of tickets) {
-      console.log(`🔗 Syncing ticket ID ${ticket.id} - "${ticket.subject}"`);
-
-      const payload = {
-        properties: {
-          subject: ticket.subject || "No Subject",
-          hs_ticket_priority: mapPriority(ticket.priority),
-          hs_pipeline: "0", // Default pipeline ID
-          hs_pipeline_stage: "1", // Default stage ID (New)
-          createdate: ticket.createdTime,
-          content: `Created via Zoho Desk\nStatus: ${ticket.status}\nChannel: ${ticket.channel}`,
-        },
-        // Optional: If you want to associate with contact/company/deal, add here
-        associations: ticket.contactId ? [
-          {
-            to: { id: ticket.contactId }, // Must be HubSpot contact ID
-            types: [
-              {
-                associationCategory: "HUBSPOT_DEFINED",
-                associationTypeId: 3 // Contact-to-ticket
-              }
-            ]
-          }
-        ] : []
-      };
-
-      const response = await axios.post(
-        'https://api.hubapi.com/crm/v3/objects/tickets',
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      console.log(`✅ Ticket synced to HubSpot with ID: ${response.data.id}`);
-    }
-
-    console.log("✅ All tickets synced successfully.");
-
-  } catch (err) {
-    console.error("❌ Error syncing ticket data:", err.response?.data || err.message);
-  }
-}
-
-
-async function fetchContactPropertiesFromZoho(accessToken) {
-  const url = 'https://www.zohoapis.com/crm/v2/settings/fields?module=Contacts';
-
-  const zohoContactProperties = [
-    "First Name",
-    "Last Name",
-    "Name Prefix",
-    "Account Name",
-    "Title",
-    "Email",
-    "Phone",
-    "Mobile Phone",
-    "Fax",
-    "Twitter Username",
-    "Mailing Street",
-    "Mailing City",
-    "Mailing Zip",
-    "Mailing State",
-    "Mailing Country",
-    "Account",
-    "Contact Owner"
-  ];
-
-  try {
-    const response = await axios.get(url, {
-      headers: {
-        Authorization: `Zoho-oauthtoken ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const allFields = response.data.fields || [];
-
-    // Filter out fields whose field_label is in the zohoContactProperties list
-    const customFields = allFields.filter(
-      field => !zohoContactProperties.includes(field.field_label)
-    );
-
-    console.log(`✅ Filtered ${customFields.length} custom contact properties from Zoho`);
-    return customFields;
-  } catch (error) {
-    console.error("❌ Error fetching contact properties from Zoho:", error.response?.data || error.message);
-    throw new Error("Failed to fetch contact properties from Zoho");
-  }
-}
-
-async function createProperty(property) {
-  const url = `${HUBSPOT_API}/crm/v3/properties/${OBJECT_TYPE}`;
-  try {
-    await axios.post(url, property, {
-      headers: {
-        Authorization: `Bearer ${TARGET_TOKEN}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    // console.log(`Created property: ${property.name}`);
-  } catch (err) {
-    console.error(`Failed to create property: ${property.name}`, err.response?.data || err.message);
-  }
-}
 
 app.get("/zoho/users/sync", async (req, res) => {
   // console.log("hi.........................")
@@ -1615,24 +1138,13 @@ async function createUserInHubSpotAsContact(user) {
   }
 }
 
-app.get("/zoho/property", async (req, res) => {
-  try {
-    // const access_token = await getZohoAccessToken();
-    const access_token = '1000.c19a5df54a641ccd4f267d42b475f579.e88047e5a7c45fe16344ac164c698f2a';
-
-    const property = await fetchContactPropertiesFromZoho(access_token);
-    const hubspotProperties = await createProperty(property);
-    // res.status(200).json(property);
-  } catch (err) {
-    console.error("❌ Error fetching Zoho users:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
+module.exports = {
+  processNotesForContacts,
+  processTasksForContacts,
+  processCallsForContacts,
+  processMeetingsForContacts,
+  processEmailsForContacts
+};
 
 
 
