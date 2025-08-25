@@ -5,14 +5,13 @@ const DESTINATION_ACCESS_TOKEN = process.env.DESTINATION_ACCESS_TOKEN;
 const BASE_URI = process.env.BASE_URI;
 
 const searchContactInHubSpot = async (contactEmail) => {
-
   console.log("Searching for contactEmail:", contactEmail);
   const filters = {
     filterGroups: [
       {
         filters: [
           {
-            propertyName: "email", // Replace with your custom property name if different
+            propertyName: "email",
             operator: "EQ",
             value: contactEmail,
           },
@@ -24,6 +23,29 @@ const searchContactInHubSpot = async (contactEmail) => {
   };
   return searchDataOnHubspot("contacts", filters);
 };
+async function searchDataOnHubspot(objectType, filters) {
+  // console.log("hiiiiiiiiiiiiiiiiiiiiiiiiii");
+  try {
+    console.log("DESTINATION_ACCESS_TOKEN", DESTINATION_ACCESS_TOKEN);
+    // console.log("filters", filters);
+    // console.log("objectType", objectType);
+    const response = await axios.post(
+      `${BASE_URI}/crm/v3/objects/${objectType}/search`,
+      filters,
+      {
+        headers: {
+          Authorization: `Bearer ${DESTINATION_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    // console.log("responseofei", response.data);
+    return response.data.results.length > 0 ? response.data.results[0].id : null;
+  } catch (error) {
+    console.error(`Error searching ${objectType}:`, error.message);
+    return null;
+  }
+}
 
 const searchCompanyInHubSpot = async (companyName) => {
   console.log("🔍 Searching for company:", companyName);
@@ -48,29 +70,7 @@ const searchCompanyInHubSpot = async (companyName) => {
 };
 
 
-async function searchDataOnHubspot(objectType, filters) {
-  // console.log("hiiiiiiiiiiiiiiiiiiiiiiiiii");
-  try {
-    console.log("DESTINATION_ACCESS_TOKEN", DESTINATION_ACCESS_TOKEN);
-    // console.log("filters", filters);
-    // console.log("objectType", objectType);
-    const response = await axios.post(
-      `${BASE_URI}/crm/v3/objects/${objectType}/search`,
-      filters,
-      {
-        headers: {
-          Authorization: `Bearer ${DESTINATION_ACCESS_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    // console.log("responseofei", response.data);
-    return response.data.results.length > 0 ? response.data.results[0].id : null;
-  } catch (error) {
-    console.error(`Error searching ${objectType}:`, error.message);
-    return null;
-  }
-}
+
 
 const searchDealInHubSpot = async (dealName) => {
   console.log("Searching for dealName:", dealName);
