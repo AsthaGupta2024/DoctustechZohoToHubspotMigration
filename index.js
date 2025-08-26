@@ -21,6 +21,7 @@ const CONTACT_ERROR_LOG_FILE = path.join(__dirname, "contact-sync-errors.json");
 const EMAILS_LOG_FILE = path.join(__dirname, "zoho-emails.json");
 const NOTES_LOG_FILE = "zoho_contact_notes_log.json";
 const TICKET_LOG_FILE = "zoho_ticket_log.json";
+let currentZohoAccessToken = null;
 
 const HUBSPOT_ACCESS_TOKEN = process.env.DESTINATION_ACCESS_TOKEN;
 function normalizeLabel(label) {
@@ -57,41 +58,41 @@ const hardcodedFieldOverrides = {
   // lead_contact_status:"lead_contact_status"
 };
 async function getZohoAccessToken() {
-  const url = "https://accounts.zoho.com/oauth/v2/token"; // use zoho.in if you're in India
-  const data = qs.stringify({
-    client_id: process.env.ZOHO_CLIENT_ID,
-    client_secret: process.env.ZOHO_CLIENT_SECRET,
-    //  redirect_uri: process.env.ZOHO_REDIRECT_URL,
-    code: process.env.Code,
-    grant_type: "authorization_code",
-  });
-  // console.log("data", data);
-
-  try {
-    const response = await axios.post(url, data, {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
+  const response = await axios.post(
+    "https://accounts.zoho.com/oauth/v2/token",
+    null,
+    {
+      params: {
+        refresh_token: process.env.ZOHO_REFRESH_TOKEN,
+        client_id: process.env.ZOHO_CLIENT_ID,
+        client_secret: process.env.ZOHO_CLIENT_SECRET,
+        grant_type: "refresh_token",
       },
-    });
-    console.log("response", response.data);
-    const { access_token, refresh_token, expires_in } = response.data;
+    }
+  );
+  return response.data.access_token;
+}
 
-    console.log("✅ Zoho access token retrieved successfully");
-    console.log("access_token:", access_token);
-    console.log("refresh_token:", refresh_token);
+async function getValidZohoAccessToken(forceRefresh = false) {
+  if (!currentZohoAccessToken || forceRefresh) {
+    currentZohoAccessToken = await getZohoAccessToken();
+  }
+  return currentZohoAccessToken;
+}
 
-    // 🟢 Update global values
-    currentAccessToken = access_token;
-    refreshToken = refresh_token;
-    tokenExpiryTime = Date.now() + (expires_in - 60) * 1000;
-
-    return { access_token, refresh_token, expires_in };
+async function zohoApiRequest(config) {
+  let token = await getValidZohoAccessToken();
+  config.headers = config.headers || {};
+  config.headers["Authorization"] = `Zoho-oauthtoken ${token}`;
+  try {
+    return await axios(config);
   } catch (error) {
-    console.error(
-      "❌ Error fetching Zoho access token:",
-      error.response?.data || error.message
-    );
-    throw new Error("Failed to get Zoho access token");
+    if (error.response && error.response.status === 401) {
+      token = await getValidZohoAccessToken(true);
+      config.headers["Authorization"] = `Zoho-oauthtoken ${token}`;
+      return await axios(config);
+    }
+    throw error;
   }
 }
 async function refreshAccessToken() {
@@ -145,10 +146,15 @@ async function fetchZohoFieldMap(access_token, objectName) {
   // const access_token = "1000.e76f1b5af73e36da3a9da30ca6426a9f.5850a53c06c631aad91a1994d57b591f";
   console.log("access_token----", access_token);
   const map = {};
-  const res = await axios.get(url, {
-    headers: {
-      Authorization: `Bearer ${access_token}`,
-    },
+  // const res = await axios.get(url, {
+  //   headers: {
+  //     Authorization: `Bearer ${access_token}`,
+  //   },
+  // });
+
+  const res = await zohoApiRequest({
+    method: "get",
+    url: `${url}`,
   });
   const fieldCount = res.data.fields.length;
   console.log(`📦 Total fields in Zoho ${objectName} module: ${fieldCount}`);
@@ -1370,17 +1376,14 @@ async function syncLeadContactsToHubSpot(
   }
 }
 
-
-
-
 app.get("/zoho/deals", async (req, res) => {
   // let tokenObj = await getZohoAccessToken();
   // let access_token = tokenObj.access_token;
   let access_token =
     "1000.53aaa6c6c410bc0918a3c93661f15502.770064a0fe17ab7c84cafe5ad6524066";
 
-  // let page = 1;
-  // let moreRecords = true;
+  let page = 1;
+  let moreRecords = true;
 
   try {
     const fieldMap = await buildFieldMap(access_token);
@@ -1389,16 +1392,21 @@ app.get("/zoho/deals", async (req, res) => {
     while (moreRecords) {
       console.log(`📄 Fetching page: ${page}`);
 
-      // const url = `https://www.zohoapis.com/crm/v2/Leads?per_page=1&page=${page}`;
+      const url = `https://www.zohoapis.com/crm/v2/Deals?per_page=5&page=${page}`;
       // const url = "https://www.zohoapis.com/crm/v2/Accounts/4582160000171491017";
       // const url = "https://www.zohoapis.com/crm/v2/Deals/4582160000173019020";
-      const url = "https://www.zohoapis.com/crm/v2/Deals/4582160000178414103";
+      // const url = "https://www.zohoapis.com/crm/v2/Deals/4582160000178414103";
       // const url = "https://www.zohoapis.com/crm/v2/Deals/4582160000172116071";
 
-      const dealRes = await axios.get(url, {
-        headers: {
-          Authorization: `Zoho-oauthtoken ${access_token}`,
-        },
+      // const dealRes = await axios.get(url, {
+      //   headers: {
+      //     Authorization: `Zoho-oauthtoken ${access_token}`,
+      //   },
+      // });
+
+      const dealRes = await zohoApiRequest({
+        method: "get",
+        url: `${url}`,
       });
 
       const zohoDeals = dealRes.data.data || [];
@@ -1416,6 +1424,7 @@ app.get("/zoho/deals", async (req, res) => {
 
       moreRecords = dealRes.data.info?.more_records || false;
       page += 1;
+      // break;
     }
 
     res.status(200).json({ message: "✅ Zoho contacts synced to HubSpot." });
@@ -1450,7 +1459,6 @@ app.get("/zoho/deals", async (req, res) => {
 });
 
 async function syncDealsToHubSpot(zohoDeals, fieldMap) {
-
   // console.log("zohoDeals ", zohoDeals);
   // console.log("fieldMap ", fieldMap);
 
@@ -1483,52 +1491,52 @@ async function syncDealsToHubSpot(zohoDeals, fieldMap) {
     "Hospitals & Physicians Clinics": "Hospital & Health Care", // 🛠 Corrected
   };
   const leadSourceMap = {
-    "-None-": "-None-",
-    "Campaign Email": "CAMPAIGN_EMAIL",
-    Awareness: "AWARENESS",
-    Casestudydoctustechhelpsboostrafaccuracy: "CASESTUDY",
-    "Changes Between Hcc V24 And Hcc V28": "VERSION_CHANGES",
-    Chat: "CHAT",
-    Cleverly: "CLEVERLY",
-    "Cold Call": "COLD_CALL",
-    "Cold Linkedin Outreach": "LINKEDIN_OUTREACH",
-    "Compliance Sme Interview": "COMPLIANCE_INTERVIEW",
-    "Ebook Measuring The Value Of Value-Based Care": "EBOOK_VALUE_CARE",
-    Email: "EMAIL",
-    Expansion: "EXPANSION",
-    "Facebook Ads": "FACEBOOK_ADS",
-    Growth: "Growth",
-    "Hcc Quick Guide": "HCC_GUIDE",
-    Inbound: "INBOUND",
-    "Integrated Platform Contact": "INTEGRATED_CONTACT",
-    "Learn More - Performance Max Campaign": "PERFORMANCE_MAX",
-    "Learn With App": "LEARN_APP",
-    "Linkedin Form": "LINKEDIN_FORM",
-    "Linkedin Sales Search": "LINKEDIN_SALES_SEARCH",
-    "Linkedin SalesNav": "LINKEDIN_SALESNAV",
-    "NOI Digital": "NOI_DIGITAL",
-    "Ob Aco": "OB_ACO",
-    "Ob Athena": "OB_ATHENA",
-    "Ob Persona": "OB_PERSONA",
-    "Ob Re-Engaged": "OB_RE-ENGAGED",
-    "Oppt Drive": "OPPT_DRIVE",
-    "Personal Network": "PERSONAL_NETWORK",
-    PPC: "PPC",
-    "Radv Whitepaper": "RADV_WHITEPAPER",
-    "Raf Revenue Calculator": "RAF_REVENUE_CALCULATOR",
-    Referral: "REFERRAL",
-    "Risk Adjustment One Pager": "RISK_ADJUSTMENT_ONE_PAGER",
-    "Schedule A Demo": "SCHEDULE1_A_DEMO",
-    Scupdap: "SCUPDAP",
-    Seamless: "SEAMLESS",
-    "Site Contact Us": "SITE_CONTACT_US",
-    "Visitor Insites": "VISITOR_INSITES",
-    Webinar: "WEBINAR",
-    Website: "WEBSITE",
-    "Website Visit": "WEBSITE_VISIT",
-    YAMM: "YAMM",
-    "Zoominfo Sales Search": "ZOOMINFO_SALES_SEARCH",
-  };
+      "-none-": "-None-",
+      "campaign email": "CAMPAIGN_EMAIL",
+      awareness: "AWARENESS",
+      casestudydoctustechhelpsboostrafaccuracy: "CASESTUDY",
+      "changes between hcc v24 and hcc v28": "VERSION_CHANGES",
+      chat: "CHAT",
+      cleverly: "CLEVERLY",
+      "cold call": "COLD_CALL",
+      "cold linkedin outreach": "LINKEDIN_OUTREACH",
+      "compliance sme interview": "COMPLIANCE_INTERVIEW",
+      "ebook measuring the value of value-based care": "EBOOK_VALUE_CARE",
+      email: "EMAIL",
+      expansion: "EXPANSION",
+      "facebook ads": "FACEBOOK_ADS",
+      growth: "Growth",
+      "hcc quick guide": "HCC_GUIDE",
+      inbound: "INBOUND",
+      "integrated platform contact": "INTEGRATED_CONTACT",
+      "learn more - performance max campaign": "PERFORMANCE_MAX",
+      "learn with app": "LEARN_APP",
+      "linkedin form": "LINKEDIN_FORM",
+      "linkedin sales search": "LINKEDIN_SALES_SEARCH",
+      "linkedin salesnav": "LINKEDIN_SALESNAV",
+      "noi digital": "NOI_DIGITAL",
+      "ob aco": "OB_ACO",
+      "ob athena": "OB_ATHENA",
+      "ob persona": "OB_PERSONA",
+      "ob re-engaged": "OB_RE-ENGAGED",
+      "oppt drive": "OPPT_DRIVE",
+      "personal network": "PERSONAL_NETWORK",
+      ppc: "PPC",
+      "radv whitepaper": "RADV_WHITEPAPER",
+      "raf revenue calculator": "RAF_REVENUE_CALCULATOR",
+      referral: "REFERRAL",
+      "risk adjustment one pager": "RISK_ADJUSTMENT_ONE_PAGER",
+      "schedule a demo": "SCHEDULE1_A_DEMO",
+      scupdap: "SCUPDAP",
+      seamless: "SEAMLESS",
+      "site contact us": "SITE_CONTACT_US",
+      "visitor insites": "VISITOR_INSITES",
+      webinar: "WEBINAR",
+      website: "WEBSITE",
+      "website visit": "WEBSITE_VISIT",
+      yamm: "YAMM",
+      "zoominfo sales search": "ZOOMINFO_SALES_SEARCH",
+    };
   const normalize = (str) =>
     String(str || "")
       .trim()
@@ -1680,8 +1688,9 @@ async function syncDealsToHubSpot(zohoDeals, fieldMap) {
       properties["last_activity_time"] = convertToUtcMillis(
         deals.Last_Activity_Time
       );
-      const zohoLeadSource = deals.Lead_Source;
+      let zohoLeadSource = deals.Lead_Source;
       console.log(`📧 Lead_Source: ${zohoLeadSource}`);
+      zohoLeadSource = zohoLeadSource?.trim()?.toLowerCase();
       const mappedLeadSource = leadSourceMap[zohoLeadSource?.trim()];
 
       console.log(`📧 Mapped lead_source: ${mappedLeadSource}`);
