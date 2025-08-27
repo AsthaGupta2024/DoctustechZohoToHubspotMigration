@@ -151,13 +151,12 @@ async function fetchZohoFieldMap(objectName) {
     url: `${url}`,
   });
   const fieldCount = res.data.fields.length;
-  console.log(`📦 Total fields in Zoho ${objectName} module: ${fieldCount}`);
+  logger.info(`📦 Total fields in Zoho ${objectName} module: ${fieldCount}`);
 
   res.data.fields.forEach((f) => {
     const normalized = normalizeLabel(f.field_label);
     map[normalized] = f.api_name;
   });
-  // console.log("🔗 Zoho Field Map:", map);
 
   return map;
 }
@@ -177,37 +176,37 @@ async function fetchHubSpotFieldMap(objecttype) {
 
     // ❌ Skip hs_lead_status to avoid accidental mapping
     if (f.name === "hubspot_owner_id") {
-      console.log(`🚫 Skipping default HubSpot property: hs_lead_status`);
+      logger.info(`🚫 Skipping default HubSpot property: hs_lead_status`);
       return;
     }
     if (f.name === "stage") {
-      console.log(`🚫 Skipping default HubSpot property: hs_lead_status`);
+      logger.info(`🚫 Skipping default HubSpot property: hs_lead_status`);
       return;
     }
     if (f.name === "Created_Time") {
-      console.log(`🚫 Skipping default HubSpot property: Created_Time`);
+      logger.info(`🚫 Skipping default HubSpot property: Created_Time`);
       return;
     }
     if (f.name === "Modified_Time") {
-      console.log(`🚫 Skipping default HubSpot property: Modified_Time`);
+      logger.info(`🚫 Skipping default HubSpot property: Modified_Time`);
       return;
     }
     // comment for deals
     // if (f.name === "lead_source_type") {
-    //   console.log(`🚫 Skipping default HubSpot property: lead_source_type`);
+    //   logger.info(`🚫 Skipping default HubSpot property: lead_source_type`);
     //   return;
     // }
     // if (f.name === "lead_contact_status") {
-    //   console.log(`🚫 Skipping default HubSpot property: lead_contact_status`);
+    //   logger.info(`🚫 Skipping default HubSpot property: lead_contact_status`);
     //   return;
     // }
     if (f.name === "bdr_owner") {
-      console.log(`🚫 Skipping default HubSpot property: lead_contact_status`);
+      logger.info(`🚫 Skipping default HubSpot property: lead_contact_status`);
       return;
     }
     //uncomment for contact and deal
     if (f.name === "hs_lead_status") {
-      console.log(`🚫 Skipping default HubSpot property: lead_contact_status`);
+      logger.info(`🚫 Skipping default HubSpot property: lead_contact_status`);
       return;
     }
 
@@ -220,11 +219,11 @@ async function fetchHubSpotFieldMap(objecttype) {
 
 // 3. Build dynamic map: Zoho API name ➜ HubSpot API name
 async function buildFieldMap() {
-  const zohoFields = await fetchZohoFieldMap("Leads"); // { normalized_label: zohoApiName }
-  const hubspotFields = await fetchHubSpotFieldMap("contacts"); // { normalized_label: hubspotApiName }
+  // const zohoFields = await fetchZohoFieldMap("Leads"); // { normalized_label: zohoApiName }
+  // const hubspotFields = await fetchHubSpotFieldMap("contacts"); // { normalized_label: hubspotApiName }
 
-  // const zohoFields = await fetchZohoFieldMap(access_token, "Deals"); // { normalized_label: zohoApiName }
-  // const hubspotFields = await fetchHubSpotFieldMap("deals"); // { normalized_label: hubspotApiName }
+  const zohoFields = await fetchZohoFieldMap("Deals"); // { normalized_label: zohoApiName }
+  const hubspotFields = await fetchHubSpotFieldMap("deals"); // { normalized_label: hubspotApiName }
 
   const dynamicMap = {};
   const unmatchedFields = [];
@@ -232,12 +231,12 @@ async function buildFieldMap() {
   for (const [normalizedLabel, zohoApiName] of Object.entries(zohoFields)) {
     if (hubspotFields[normalizedLabel]) {
       dynamicMap[zohoApiName] = hubspotFields[normalizedLabel];
-      console.log(
+      logger.info(
         `✅ Mapping ${zohoApiName} ➜ ${hubspotFields[normalizedLabel]}`
       );
     } else if (hardcodedFieldOverrides[normalizedLabel]) {
       dynamicMap[zohoApiName] = hardcodedFieldOverrides[normalizedLabel];
-      console.log(
+      logger.info(
         `🔁 Hardcoded Mapping ${zohoApiName} ➜ ${hardcodedFieldOverrides[normalizedLabel]}`
       );
     } else {
@@ -246,9 +245,9 @@ async function buildFieldMap() {
   }
 
   if (unmatchedFields.length > 0) {
-    console.log("\n⚠️ Unmatched Zoho Fields (not found in HubSpot):");
+    logger.info("\n⚠️ Unmatched Zoho Fields (not found in HubSpot):");
     unmatchedFields.forEach((field) => {
-      console.log(`❌ ${field.apiName} (label: ${field.label})`);
+      logger.info(`❌ ${field.apiName} (label: ${field.label})`);
     });
   }
 
@@ -1357,32 +1356,19 @@ async function syncLeadContactsToHubSpot(zohoContacts, fieldMap, objectType) {
 }
 
 app.get("/zoho/deals", async (req, res) => {
-  // let tokenObj = await getZohoAccessToken();
-  // let access_token = tokenObj.access_token;
-  let access_token =
-    "1000.53aaa6c6c410bc0918a3c93661f15502.770064a0fe17ab7c84cafe5ad6524066";
-
   let page = 1;
   let moreRecords = true;
 
   try {
-    const fieldMap = await buildFieldMap(access_token);
-    console.log("🔗 Final Mapping:", fieldMap);
+    logger.info('Start deal migration script.....')
+    logger.info('start building map...');
+    const fieldMap = await buildFieldMap();
 
     while (moreRecords) {
-      console.log(`📄 Fetching page: ${page}`);
+      logger.info(`📄 Fetching page: ${page}`);
 
       const url = `https://www.zohoapis.com/crm/v2/Deals?per_page=5&page=${page}`;
-      // const url = "https://www.zohoapis.com/crm/v2/Accounts/4582160000171491017";
-      // const url = "https://www.zohoapis.com/crm/v2/Deals/4582160000173019020";
-      // const url = "https://www.zohoapis.com/crm/v2/Deals/4582160000178414103";
-      // const url = "https://www.zohoapis.com/crm/v2/Deals/4582160000172116071";
-
-      // const dealRes = await axios.get(url, {
-      //   headers: {
-      //     Authorization: `Zoho-oauthtoken ${access_token}`,
-      //   },
-      // });
+      // const url = "https://www.zohoapis.com/crm/v2/Deals/4582160000127574127";
 
       const dealRes = await zohoApiRequest({
         method: "get",
@@ -1390,8 +1376,7 @@ app.get("/zoho/deals", async (req, res) => {
       });
 
       const zohoDeals = dealRes.data.data || [];
-      console.log("zohoDeals", zohoDeals);
-      console.log(
+      logger.info(
         `📦 Fetched ${zohoDeals.length} Zoho contacts on page ${page}`
       );
 
@@ -1439,36 +1424,31 @@ app.get("/zoho/deals", async (req, res) => {
 });
 
 async function syncDealsToHubSpot(zohoDeals, fieldMap) {
-  // console.log("zohoDeals ", zohoDeals);
-  // console.log("fieldMap ", fieldMap);
 
   const leadStatusMap = {
-    "-None-": "-None-",
-    Qualified: "Qualified",
-    "Not Qualified": "Not Qualified",
-    Nurture: "Nurture",
-    "Do Not Contact": "Do Not Contact",
-    "Channel Partner": "Channel Partner",
-    Inactive: "Inactive",
-    Warm: "Warm",
-    Prospect: "Prospect",
-    "Meeting - Pending": "Meeting - Pending",
-    "Meeting - Booked": "Meeting - Booked",
-    Imported: "Imported",
-    "PPC - New": "PPC - New",
-    "Do Not Call": "Do Not Call",
-    "Call me": "Call me",
-    "SQL Qualified": "SQL Qualified",
-    "Is Not Qualified": "Is Not Qualified",
+    '-None-': '-None-',
+    Warm: 'Warm',
+    Nurture: 'Nurture',
+    Prospect: 'Prospect',
+    'Meeting - Pending': 'Meeting - Pending',
+    'Meeting - Booked': 'Meeting - Booked',
+    'Channel Partner': 'Channel Partner',
+    Imported: 'Imported',
+    'PPC - New': 'PPC - New',
+    'Do Not Call': 'Do Not Call',
+    'Call me': 'Call me',
+    Inactive: 'Inactive',
+    Qualified: 'Qualified',
+    'SQL Qualified': 'SQL Qualified'
   };
 
   const industryMap = {
-    "-None-": "-None-",
-    Insurance: "Insurance",
-    "Health, Wellness & Fitness": "Health, Wellness & Fitness",
-    "Medical Practice": "Medical Practice",
-    "Hospital & Healthcare": "Hospital & Health Care", // 🛠 Corrected
-    "Hospitals & Physicians Clinics": "Hospital & Health Care", // 🛠 Corrected
+    '-None-': '-None-',
+    'Health, Wellness & Fitness': 'Health, Wellness & Fitness',
+    Insurance: 'Insurance',
+    'Medical Practice': 'Medical Practice',
+    'Hospital & Health Care': 'Hospital & Health Care',
+    'Hospitals & Physicians Clinics': 'Hospitals & Physicians Clinics'
   };
   const leadSourceMap = {
       "-none-": "-None-",
@@ -1521,21 +1501,21 @@ async function syncDealsToHubSpot(zohoDeals, fieldMap) {
     String(str || "")
       .trim()
       .toLowerCase();
-  const errorLogs = [];
 
   for (const deals of zohoDeals) {
-    console.log("deals.Deal_Name ", deals.Deal_Name);
-    console.log("deals ", deals);
+
+    logger.info("deals.Deal_Name ", deals.Deal_Name);
+    let payload = {};
     try {
       if (!deals.Deal_Name) {
-        console.warn("⛔ Skipping deal with missing Deal_Name.");
+        logger.warn("⛔ Skipping deal with missing Deal_Name.");
         continue;
       }
       const existingId = await hsHelpers.searchDealInHubSpot(deals.Deal_Name);
 
       const properties = {};
 
-      console.log("📋 Mapping Zoho fields to HubSpot properties...");
+      logger.info("📋 Mapping Zoho fields to HubSpot properties...");
       for (const [zohoKey, hubspotKey] of Object.entries(fieldMap)) {
         const value = deals[zohoKey];
         if (!value) continue;
@@ -1555,14 +1535,14 @@ async function syncDealsToHubSpot(zohoDeals, fieldMap) {
             const meetingTypes = deals.Meeting_Type;
 
             if (!Array.isArray(meetingTypes) || meetingTypes.length === 0) {
-              console.warn(`⚠️ No valid meeting_type found for ${deals.Email}`);
+              logger.warn(`⚠️ No valid meeting_type found for ${deals.Email}`);
             } else {
               properties[hubspotKey] = meetingTypes.join(";");
-              console.log(`🟡 Mapped meeting_type: ${properties[hubspotKey]}`);
+              logger.info(`🟡 Mapped meeting_type: ${properties[hubspotKey]}`);
             }
           } else if (hubspotKey === "linkedin_connected") {
             const linkedinConnected = deals.LinkedIn_Connected;
-            console.log(
+            logger.info(
               "🟡 Raw linkedinConnected from Zoho:",
               linkedinConnected
             );
@@ -1571,41 +1551,41 @@ async function syncDealsToHubSpot(zohoDeals, fieldMap) {
               !Array.isArray(linkedinConnected) ||
               linkedinConnected.length === 0
             ) {
-              console.warn(
+              logger.warn(
                 `⚠️ No valid linkedinConnected found for ${deals.Email}`
               );
             } else {
               properties[hubspotKey] = linkedinConnected.join(";");
-              console.log(
+              logger.info(
                 `🟡 Mapped linkedinConnected: ${properties[hubspotKey]}`
               );
             }
           } else if (hubspotKey === "tag") {
             const tag = deals.Tag;
-            console.log("🟡 Raw tag from Zoho:", tag);
+            logger.info("🟡 Raw tag from Zoho:", tag);
 
             if (!Array.isArray(tag) || tag.length === 0) {
-              console.warn(`⚠️ No valid tag found for ${deals.Email}`);
+              logger.warn(`⚠️ No valid tag found for ${deals.Email}`);
               properties[hubspotKey] = ""; // ✅ Send empty string if no tags
             } else {
               properties[hubspotKey] = tag.join(";");
-              console.log(`🟡 Mapped tag: ${properties[hubspotKey]}`);
+              logger.info(`🟡 Mapped tag: ${properties[hubspotKey]}`);
             }
           } else if (hubspotKey === "program") {
             const program = deals.Program;
-            console.log("🟡 Raw program from Zoho:", program);
+            logger.info("🟡 Raw program from Zoho:", program);
 
             if (!Array.isArray(program) || program.length === 0) {
-              console.warn(`⚠️ No valid program found for ${deals.Email}`);
+              logger.warn(`⚠️ No valid program found for ${deals.Email}`);
               properties[hubspotKey] = ""; // ✅ Send empty string if no tags
             } else {
               properties[hubspotKey] = program.join(";");
-              console.log(`🟡 Mapped program: ${properties[hubspotKey]}`);
+              logger.info(`🟡 Mapped program: ${properties[hubspotKey]}`);
             }
           } else if (hubspotKey === "phone") {
-            console.log("🟡 Raw phone from Zoho:", deals.Phone);
+            logger.info("🟡 Raw phone from Zoho:", deals.Phone);
             properties["phone"] = deals.Phone;
-            console.log(`📞 Added property: phone = "${deals.Phone}"`);
+            logger.info(`📞 Added property: phone = "${deals.Phone}"`);
           } else {
             properties[hubspotKey] = value;
           }
@@ -1613,7 +1593,7 @@ async function syncDealsToHubSpot(zohoDeals, fieldMap) {
       }
 
       const zohoOwnerId = deals.Owner?.id?.trim();
-      console.log(`🆔 Zoho Owner ID: ${zohoOwnerId}`);
+      logger.info(`🆔 Zoho Owner ID: ${zohoOwnerId}`);
       if (!zohoOwnerId || isNaN(zohoOwnerId)) {
         console.warn(
           `⚠️ Invalid or unmapped HubSpot owner ID for Zoho owner ID: ${zohoOwnerId}`
@@ -1630,24 +1610,24 @@ async function syncDealsToHubSpot(zohoDeals, fieldMap) {
       properties["zoho_deal_owner_id"] = deals.Owner?.id;
       properties["lead_owner_id"] = deals.Lead_Owner?.id;
       properties["deal_name"] = deals.Deal_Name;
-      console.log(`✅ Added property: deal_name = "${deals.Deal_Name}"`);
+      logger.info(`✅ Added property: deal_name = "${deals.Deal_Name}"`);
       properties["ownerid"] = zohoOwnerId;
       properties["email"] = deals.Email;
-      console.log(` Added property: email = "${deals.Email}"`);
+      logger.info(` Added property: email = "${deals.Email}"`);
       properties["title"] = deals.Title;
-      console.log(`✅ Added property: title = "${deals.Title}"`);
+      logger.info(`✅ Added property: title = "${deals.Title}"`);
       properties["account_id"] = deals.Account_Name?.id;
-      console.log(
+      logger.info(
         `✅ Added property: account_id = "${deals.Account_Name?.id}"`
       );
       properties["account_name"] = deals.Account_Name?.name;
-      console.log(
+      logger.info(
         `✅ Added property: account_name = "${deals.Account_Name?.name}"`
       );
       properties["zoho_bdr_id"] = deals.BDR_Owner?.id;
-      console.log(`✅ Added property: zoho_bdr_id = "${deals.BDR_Owner?.id}"`);
+      logger.info(`✅ Added property: zoho_bdr_id = "${deals.BDR_Owner?.id}"`);
       properties["product_type_new"] = deals.Product_Type_new;
-      console.log(
+      logger.info(
         `✅ Added property: product_type_new = "${deals.Product_Type_new}"`
       );
       const modifiedById = deals.Modified_By?.id;
@@ -1669,17 +1649,34 @@ async function syncDealsToHubSpot(zohoDeals, fieldMap) {
         deals.Last_Activity_Time
       );
       let zohoLeadSource = deals.Lead_Source;
-      console.log(`📧 Lead_Source: ${zohoLeadSource}`);
+      logger.info(`📧 Lead_Source: ${zohoLeadSource}`);
       zohoLeadSource = zohoLeadSource?.trim()?.toLowerCase();
       const mappedLeadSource = leadSourceMap[zohoLeadSource?.trim()];
 
-      console.log(`📧 Mapped lead_source: ${mappedLeadSource}`);
+      logger.info(`📧 Mapped lead_source: ${mappedLeadSource}`);
       if (mappedLeadSource) {
         properties["lead_source"] = mappedLeadSource;
       } else {
         console.warn(
           `⚠️ Skipping invalid lead_contact_status "${zohoLeadSource}" for ${deals.Email}`
         );
+        properties["lead_source"] = '-None-';
+      }
+
+      const zohoLeadStatus = deals.Lead_Status
+      const mappedLeadStatus = leadStatusMap[zohoLeadStatus?.trim()];
+      if(mappedLeadStatus){
+         properties["lead_status"] = mappedLeadStatus;
+      }else{
+         properties["lead_status"] = '-None-';
+      }
+
+      const zohoIndustryStatus = deals.Industry
+      const mappedIndustryStatus = industryMap[zohoIndustryStatus?.trim()];
+      if(mappedIndustryStatus){
+         properties["industry"] = mappedIndustryStatus;
+      }else{
+         properties["industry"] = '-None-';
       }
 
       // 🛠 Pipeline and Stage Fix
@@ -1729,16 +1726,16 @@ async function syncDealsToHubSpot(zohoDeals, fieldMap) {
       if (matchedStageKey) {
         const stageId = dealStageMapping[matchedPipelineKey][matchedStageKey];
         properties["dealstage"] = stageId; // 🛠 corrected property name
-        console.log(`✅ Deal stage mapped: ${stageRaw} -> ${stageId}`);
+        logger.info(`✅ Deal stage mapped: ${stageRaw} -> ${stageId}`);
       } else {
-        console.warn(
+        logger.warn(
           `⚠️ Stage "${stageRaw}" not mapped for pipeline "${matchedPipelineKey}"`
         );
       }
 
       // ✅ Final payload
-      const payload = { properties };
-      console.log(`📤 Sending deal: "${deals.Deal_Name}"`, payload);
+      payload = { properties };
+      logger.info(`📤 Sending deal: "${deals.Deal_Name}"`, payload);
 
       const hubspotUrl = existingId
         ? `https://api.hubapi.com/crm/v3/objects/deals/${existingId}`
@@ -1753,7 +1750,7 @@ async function syncDealsToHubSpot(zohoDeals, fieldMap) {
         },
       });
 
-      console.log(
+      logger.info(
         `✅ Deal ${existingId ? "updated" : "created"}: "${deals.Deal_Name}"`
       );
     } catch (err) {
@@ -1761,28 +1758,8 @@ async function syncDealsToHubSpot(zohoDeals, fieldMap) {
         err.response?.data?.message ||
         JSON.stringify(err.response?.data) ||
         err.message;
-      console.error(
-        `❌ Error syncing deal "${deals.Deal_Name}":`,
-        errorMessage
-      );
-      errorLogs.push({
-        contactId: deals.id,
-        dealName: deals.Deal_Name,
-        error: errorMessage,
-      });
+      logger.error(`❌ Error syncing deal "${deals.Deal_Name}":`, errorMessage, payload, 'deal');
     }
-  }
-
-  if (errorLogs.length > 0) {
-    fs.writeFileSync(
-      CONTACT_ERROR_LOG_FILE,
-      JSON.stringify(errorLogs, null, 2)
-    );
-    console.log(
-      `📁 Logged ${errorLogs.length} deal sync errors to ${CONTACT_ERROR_LOG_FILE}`
-    );
-  } else {
-    console.log("🎉 All deals synced successfully.");
   }
 }
 

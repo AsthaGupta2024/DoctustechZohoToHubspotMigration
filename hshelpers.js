@@ -73,8 +73,6 @@ const searchCompanyInHubSpot = async (companyName) => {
 
 
 const searchDealInHubSpot = async (dealName) => {
-  console.log("Searching for dealName:", dealName);
-
   const filters = {
     filterGroups: [
       {
@@ -90,8 +88,6 @@ const searchDealInHubSpot = async (dealName) => {
     properties: ["dealname"],
     limit: 1,
   };
-
-  console.log("filters", JSON.stringify(filters, null, 2));
   return searchDataOnHubspot("deals", filters);
 };
 
