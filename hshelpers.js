@@ -288,5 +288,6 @@ module.exports = {
   associateLineItemToDeal,
   searchContactInHubSpot,
   getHubSpotContactIdByEmail,
-  searchCompanyInHubSpot
+  searchCompanyInHubSpot,
+  searchDataOnHubspot
 };
