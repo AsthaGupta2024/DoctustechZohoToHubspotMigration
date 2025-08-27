@@ -55,7 +55,7 @@ class Logger {
         const objectType = process.env.HS_LOG_OBJECT;
 
         const record = {hubspot_request:JSON.stringify(data), hubspot_response:JSON.stringify(errorData), log_type:logType}
-        hubspotService.createCustomObjectRecord(objectType, record);
+        await hubspotService.createCustomObjectRecord(objectType, record);
         fs.appendFileSync(logFile, logMessage);
         console.error(`${message}`);
     }
