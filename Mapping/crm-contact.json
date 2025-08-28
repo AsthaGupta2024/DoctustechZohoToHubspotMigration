@@ -1,0 +1,153 @@
+{
+    "mapping":{
+        "-None-": "-None-",
+        "Campaign Email": "Campaign Email", 
+        "CasestudyDoctusTechHelpsboostRAFaccuracy": "CASESTUDY",
+        "Changes between HCC V24 and HCC V28": "VERSION_CHANGES", 
+        "Chat": "Chat", 
+        "Cleverly": "Cleverly", 
+        "Cold Call": "COLD_CALL",
+        "Cold LinkedIn Outreach": "LINKEDIN_OUTREACH", 
+        "Compliance SME interview": "COMPLIANCE_INTERVIEW",
+        "Demo Account User": "DEMO_USER",
+        "Ebook Measuring the value of value-based care": "EBOOK_VALUE_CARE",
+        "Facebook Ads": "FACEBOOK_ADS",
+        "Google AdWords": "Google AdWords", 
+        "Growth": "Growth",
+        "HCC Audits Compliance": "HCC Audits Compliance", 
+        "HCC QUICK GUIDE": "HCC_GUIDE",
+        "Inbound": "Inbound", 
+        "INTEGRATED PLATFORM CONTACT": "INTEGRATED_CONTACT",
+        "Internal Seminar": "Internal Seminar", 
+        "Learn More - Performance Max Campaign": "PERFORMANCE_MAX",
+        "LEARN WITH APP": "LEARN_APP",
+        "LINKEDIN FORM": "LINKEDIN_FORM",
+        "LinkedIn Sales Search": "LINKEDIN_SALES_SEARCH",
+        "LinkedIn SalesNav": "LinkedIn SalesNav", 
+        "NOI Digitial": "NOI Digitial", 
+        "OB ACO": "OB_ACO",
+        "OB Athena": "OB_ATHENA",
+        "OB Persona": "OB_PERSONA",
+        "OB Re-Engaged": "OB_RE-ENGAGED",
+        "Oppt Drive": "Oppt Drive", 
+        "Personal Network": "PERSONAL_NETWORK",
+        "Prior Connection": "Prior Connection", 
+        "RADV WHITEPAPER": "RADV_WHITEPAPER",
+        "RAF revenue calculator": "RAF_REVENUE_CALCULATOR",
+        "Referral": "REFERRAL",
+        "Risk adjustment one pager": "RISK_ADJUSTMENT_ONE_PAGER",
+        "SCHEDULE A DEMO": "SCHEDULE1_A_DEMO",
+        "SCU PDAP": "SCU PDAP", 
+        "Seamless": "Seamless",
+        "SITE CONTACT US": "SITE_CONTACT_US",
+        "Trade Show": "Trade Show", 
+        "Twitter": "Twitter", 
+        "Visitor InSites": "VISITOR_INSITES",
+        "Web Research": "Web Research", 
+        "Webinar": "WEBINAR",
+        "Website Landing Form": "Website Landing Form", 
+        "Website Visit": "Website Visit", 
+        "YAMM": "YAMM", 
+        "ZoomInfo": "ZoomInfo",
+        "ZoomInfo Sales Search": "ZoomInfo Sales Search"
+    },
+    "addOptions":[
+        {
+          "value": "Campaign Email",
+          "label": "Campaign Email",
+          "displayOrder": 0
+        },
+        {
+          "value": "Chat",
+          "label": "Chat",
+          "displayOrder": 0
+        },
+
+
+        {
+          "value": "Cleverly",
+          "label": "Cleverly",
+          "displayOrder": 0
+        },
+
+
+        {
+          "value": "Google AdWords",
+          "label": "Google AdWords",
+          "displayOrder": 0
+        },
+
+        {
+          "value": "HCC Audits Compliance",
+          "label": "HCC Audits Compliance",
+          "displayOrder": 0
+        },
+
+        {
+          "value": "Inbound",
+          "label": "Inbound",
+          "displayOrder": 0
+        },
+
+        {
+          "value": "Internal Seminar",
+          "label": "Internal Seminar",
+          "displayOrder": 0
+        },
+        {
+          "value": "LinkedIn SalesNav",
+          "label": "LinkedIn SalesNav",
+          "displayOrder": 0
+        },
+        {
+          "value": "NOI Digitial",
+          "label": "NOI Digitial",
+          "displayOrder": 0
+        },
+        {
+          "value": "Oppt Drive",
+          "label": "Oppt Drive",
+          "displayOrder": 0
+        },
+        {
+          "value": "Prior Connection",
+          "label": "Prior Connection",
+          "displayOrder": 0
+        },
+        {
+          "value": "SCU PDAP",
+          "label": "SCU PDAP",
+          "displayOrder": 0
+        },
+        {
+          "value": "Trade Show",
+          "label": "Trade Show",
+          "displayOrder": 0
+        },
+        {
+          "value": "Twitter",
+          "label": "Twitter",
+          "displayOrder": 0
+        },
+        {
+          "value": "Web Research",
+          "label": "Web Research",
+          "displayOrder": 0
+        },
+        {
+          "value": "Website Landing Form",
+          "label": "Website Landing Form",
+          "displayOrder": 0
+        },
+        {
+          "value": "Website Visit",
+          "label": "Website Visit",
+          "displayOrder": 0
+        },
+        {
+          "value": "YAMM",
+          "label": "YAMM",
+          "displayOrder": 0
+        }
+    ]
+}

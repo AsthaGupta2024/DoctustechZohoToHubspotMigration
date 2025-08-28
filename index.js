@@ -222,8 +222,11 @@ async function buildFieldMap() {
   // const zohoFields = await fetchZohoFieldMap("Leads"); // { normalized_label: zohoApiName }
   // const hubspotFields = await fetchHubSpotFieldMap("contacts"); // { normalized_label: hubspotApiName }
 
-  const zohoFields = await fetchZohoFieldMap("Deals"); // { normalized_label: zohoApiName }
-  const hubspotFields = await fetchHubSpotFieldMap("deals"); // { normalized_label: hubspotApiName }
+  // const zohoFields = await fetchZohoFieldMap("Deals"); // { normalized_label: zohoApiName }
+  // const hubspotFields = await fetchHubSpotFieldMap("deals"); // { normalized_label: hubspotApiName }
+
+  const zohoFields = await fetchZohoFieldMap("Contacts"); // { normalized_label: zohoApiName }
+  const hubspotFields = await fetchHubSpotFieldMap("contacts"); // { normalized_label: hubspotApiName }
 
   const dynamicMap = {};
   const unmatchedFields = [];
@@ -231,14 +234,8 @@ async function buildFieldMap() {
   for (const [normalizedLabel, zohoApiName] of Object.entries(zohoFields)) {
     if (hubspotFields[normalizedLabel]) {
       dynamicMap[zohoApiName] = hubspotFields[normalizedLabel];
-      logger.info(
-        `✅ Mapping ${zohoApiName} ➜ ${hubspotFields[normalizedLabel]}`
-      );
     } else if (hardcodedFieldOverrides[normalizedLabel]) {
       dynamicMap[zohoApiName] = hardcodedFieldOverrides[normalizedLabel];
-      logger.info(
-        `🔁 Hardcoded Mapping ${zohoApiName} ➜ ${hardcodedFieldOverrides[normalizedLabel]}`
-      );
     } else {
       unmatchedFields.push({ label: normalizedLabel, apiName: zohoApiName });
     }
@@ -255,43 +252,28 @@ async function buildFieldMap() {
 }
 
 app.get("/zoho/contacts", async (req, res) => {
-  // let tokenObj = await getZohoAccessToken();
-  // let access_token = tokenObj.access_token;
-  let access_token =
-    "1000.fbfa86a7a4fdb0dd8211318a7ad3ced8.77029cd691acfc7742ec6b14e3237bf3";
   const objectType = "Contact";
-
   let page = 1;
   let moreRecords = true;
 
   try {
-    const fieldMap = await buildFieldMap(access_token);
-    console.log("🔗 Final Mapping:", fieldMap);
+    logger.info('Start COntact migration.........');
+    logger.info('building mapp....');
+    const fieldMap = await buildFieldMap();
 
     while (moreRecords) {
       console.log(`📄 Fetching page: ${page}`);
 
-      // const url = `https://www.zohoapis.com/crm/v2/Leads?per_page=5&page=${page}`;
+      const url = `https://www.zohoapis.com/crm/v2/Contacts?per_page=5&page=${page}`;
       // const url = "https://www.zohoapis.com/crm/v2/Contacts/4582160000102983007";
-      // const url = "https://www.zohoapis.com/crm/v2/Contacts/4582160000050995055";
-      //  const url = "https://www.zohoapis.com/crm/v2/Contacts/4582160000077465060";
-      // const url = "https://www.zohoapis.com/crm/v2/Contacts/4582160000172214016";
-      const url = "https://www.zohoapis.com/crm/v2/Contacts";
 
-      console.log("url", url);
-      console.log("access_token", access_token);
-      const contactRes = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
+       const contactRes = await zohoApiRequest({
+        method: "get",
+        url: `${url}`,
       });
 
       const zohoContacts = contactRes.data.data || [];
-      console.log(
-        "----------------------zohoContacts------------------------",
-        zohoContacts
-      );
-      console.log(
+      logger.info(
         `📦 Fetched ${zohoContacts.length} Zoho contacts on page ${page}`
       );
 
@@ -408,60 +390,57 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
     "-none-": "-None-",
   };
   const leadSourceMap = {
-    "-none-": "-None-",
-    growth: "Growth",
-    organic: "Organic",
-    outbound: "Outbound",
-    "inside sales": "Inside Sales",
-    ppc: "PPC",
-    relationship: "Relationship",
-    "demo account": "Demo Account",
-    "app free trial": "APP_FREE_TRIAL",
-    awareness: "AWARENESS",
-    casestudydoctustechhelpsboostrafaccuracy: "CASESTUDY",
-    "changes between hcc v24 and hcc v28": "VERSION_CHANGES",
-    "cold call": "COLD_CALL",
-    "cold linkedin outreach": "LINKEDIN_OUTREACH",
-    "compliance sme interview": "COMPLIANCE_INTERVIEW",
-    "demo account user": "DEMO_USER",
-    discovery: "DISCOVERY",
-    "ebook measuring the value of value-based care": "EBOOK_VALUE_CARE",
-    email: "EMAIL", // 👈 this one matches now
-    "existing customer": "EXISTING_CUSTOMER",
-    "facebook ads": "FACEBOOK_ADS",
-    "hcc audits compliance": "HCC_COMPLIANCE",
-    "hcc quick guide": "HCC_GUIDE",
-    "integrated platform contact": "INTEGRATED_CONTACT",
-    "lead gen form": "LEAD_GEN_FORM",
-    "learn about app": "LEARN_ABOUT_APP",
-    "learn more - performance max campaign": "PERFORMANCE_MAX",
-    "learn with app": "LEARN_APP",
-    "learn with doctus": "LEARN_DOCTUS",
-    "learn with doctustech": "LEARN_DOCTUSTECH",
-    "learn with mobile app": "LEARN_MOBILE_APP",
-    "linkedin ads": "LINKEDIN_ADS",
-    "linkedin form": "LINKEDIN_FORM",
-    "linkedin sales search": "LINKEDIN_SALES_SEARCH",
-    "ob aco": "OB_ACO",
-    "ob athena": "OB_ATHENA",
-    "ob persona": "OB_PERSONA",
-    "ob re-engaged": "OB_RE-ENGAGED",
-    "personal network": "PERSONAL_NETWORK",
-    "radv whitepaper": "RADV_WHITEPAPER",
-    "raf revenue calculator": "RAF_REVENUE_CALCULATOR",
-    referral: "REFERRAL",
-    "risk adjustment one pager": "RISK_ADJUSTMENT_ONE_PAGER",
-    "roi calculator": "ROI_Calculator",
-    schedule_a_demo: "SCHEDULE1_A_DEMO",
-    scupdap: "SCUPDAP",
-    seamless: "SEAMLESS",
-    "site contact us": "SITE_CONTACT_US",
-    tradeshow: "TRADESHOW",
-    "visitor insites": "VISITOR_INSITES",
-    webinar: "WEBINAR",
-    zoominfo: "ZOOMINFO",
-    warm: "WARM",
-  };
+        "-None-": "-None-",
+        "Campaign Email": "Campaign Email", 
+        "CasestudyDoctusTechHelpsboostRAFaccuracy": "CASESTUDY",
+        "Changes between HCC V24 and HCC V28": "VERSION_CHANGES", 
+        "Chat": "Chat", 
+        "Cleverly": "Cleverly", 
+        "Cold Call": "COLD_CALL",
+        "Cold LinkedIn Outreach": "LINKEDIN_OUTREACH", 
+        "Compliance SME interview": "COMPLIANCE_INTERVIEW",
+        "Demo Account User": "DEMO_USER",
+        "Ebook Measuring the value of value-based care": "EBOOK_VALUE_CARE",
+        "Facebook Ads": "FACEBOOK_ADS",
+        "Google AdWords": "Google AdWords", 
+        "Growth": "Growth",
+        "HCC Audits Compliance": "HCC Audits Compliance", 
+        "HCC QUICK GUIDE": "HCC_GUIDE",
+        "Inbound": "Inbound", 
+        "INTEGRATED PLATFORM CONTACT": "INTEGRATED_CONTACT",
+        "Internal Seminar": "Internal Seminar", 
+        "Learn More - Performance Max Campaign": "PERFORMANCE_MAX",
+        "LEARN WITH APP": "LEARN_APP",
+        "LINKEDIN FORM": "LINKEDIN_FORM",
+        "LinkedIn Sales Search": "LINKEDIN_SALES_SEARCH",
+        "LinkedIn SalesNav": "LinkedIn SalesNav", 
+        "NOI Digitial": "NOI Digitial", 
+        "OB ACO": "OB_ACO",
+        "OB Athena": "OB_ATHENA",
+        "OB Persona": "OB_PERSONA",
+        "OB Re-Engaged": "OB_RE-ENGAGED",
+        "Oppt Drive": "Oppt Drive", 
+        "Personal Network": "PERSONAL_NETWORK",
+        "Prior Connection": "Prior Connection", 
+        "RADV WHITEPAPER": "RADV_WHITEPAPER",
+        "RAF revenue calculator": "RAF_REVENUE_CALCULATOR",
+        "Referral": "REFERRAL",
+        "Risk adjustment one pager": "RISK_ADJUSTMENT_ONE_PAGER",
+        "SCHEDULE A DEMO": "SCHEDULE1_A_DEMO",
+        "SCU PDAP": "SCU PDAP", 
+        "Seamless": "Seamless",
+        "SITE CONTACT US": "SITE_CONTACT_US",
+        "Trade Show": "Trade Show", 
+        "Twitter": "Twitter", 
+        "Visitor InSites": "VISITOR_INSITES",
+        "Web Research": "Web Research", 
+        "Webinar": "WEBINAR",
+        "Website Landing Form": "Website Landing Form", 
+        "Website Visit": "Website Visit", 
+        "YAMM": "YAMM", 
+        "ZoomInfo": "ZoomInfo",
+        "ZoomInfo Sales Search": "ZoomInfo Sales Search"
+    };
   const leadSourceTypeMap = {
     "-none-": "-None-",
     "demo account": "Demo Account",
@@ -479,19 +458,18 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
     "-none-": "-None-",
   };
 
-  const errorLogs = [];
-
   for (const contact of zohoContacts) {
+    let payload = {};
     try {
       if (!contact.Email) continue;
       const existingId = await hsHelpers.searchContactInHubSpot(contact.Email);
-      console.log(
+      logger.info(
         `🔍 Searching for existing contact with email: ${contact.Email}`
       );
       const properties = {};
       for (const [zohoKey, hubspotKeyOriginal] of Object.entries(fieldMap)) {
         if (hubspotKeyOriginal === "lead_stage") {
-          console.log(`⏭️ Skipping lead_stage for ${contact.Email}`);
+          logger.info(`⏭️ Skipping lead_stage for ${contact.Email}`);
           continue;
         }
         let hubspotKey = hubspotKeyOriginal;
@@ -516,7 +494,7 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
             if (emailStatusMap[value]) {
               properties[hubspotKey] = emailStatusMap[value];
             } else {
-              console.warn(
+              logger.warn(
                 `⚠️ Skipping invalid email status value "${value}" for ${contact.Email}`
               );
             }
@@ -526,7 +504,7 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
             if (emailStatusMap[value]) {
               properties[hubspotKey] = emailStatusMap[value];
             } else {
-              console.warn(
+              logger.warn(
                 `⚠️ Skipping invalid email status value "${value}" for ${contact.Email}`
               );
             }
@@ -535,7 +513,7 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
             if (mappedType) {
               properties[hubspotKey] = mappedType;
             } else {
-              console.warn(
+              logger.warn(
                 `⚠️ Skipping invalid lead type "${value}" for ${contact.Email}`
               );
             }
@@ -545,11 +523,11 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
               leadSourceTypeMap[leadSourceType.toLowerCase()];
             if (mappedStatus) {
               properties[hubspotKey] = mappedStatus;
-              console.log(
+              logger.info(
                 `📧 Mapped lead_source_type (custom): ${mappedStatus}`
               );
             } else {
-              console.warn(
+              logger.warn(
                 `⚠️ Skipping invalid lead_source_type "${leadSourceType}" for ${contact.Email}`
               );
             }
@@ -557,26 +535,26 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
             const meetingTypes = contact.Meeting_Type;
 
             if (!Array.isArray(meetingTypes) || meetingTypes.length === 0) {
-              console.warn(
+              logger.warn(
                 `⚠️ No valid meeting_type found for ${contact.Email}`
               );
             } else {
               properties[hubspotKey] = meetingTypes.join(";");
-              console.log(`🟡 Mapped meeting_type: ${properties[hubspotKey]}`);
+              logger.info(`🟡 Mapped meeting_type: ${properties[hubspotKey]}`);
             }
           } else if (hubspotKey === "program") {
             const program = contact.Program;
-            console.log("🟡 Raw Program from Zoho:", program);
+            logger.info("🟡 Raw Program from Zoho:", program);
 
             if (!Array.isArray(program) || program.length === 0) {
-              console.warn(`⚠️ No valid program found for ${contact.Email}`);
+              logger.warn(`⚠️ No valid program found for ${contact.Email}`);
             } else {
               properties[hubspotKey] = program.join(";");
-              console.log(`🟡 Mapped program: ${properties[hubspotKey]}`);
+              logger.info(`🟡 Mapped program: ${properties[hubspotKey]}`);
             }
           } else if (hubspotKey === "linkedin_connected") {
             const linkedinConnected = contact.LinkedIn_Connected;
-            console.log(
+            logger.info(
               "🟡 Raw linkedinConnected from Zoho:",
               linkedinConnected
             );
@@ -585,27 +563,27 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
               !Array.isArray(linkedinConnected) ||
               linkedinConnected.length === 0
             ) {
-              console.warn(
+              logger.warn(
                 `⚠️ No valid linkedinConnected found for ${contact.Email}`
               );
             } else {
               properties[hubspotKey] = linkedinConnected.join(";");
-              console.log(
+              logger.info(
                 `🟡 Mapped linkedinConnected: ${properties[hubspotKey]}`
               );
             }
           } else if (hubspotKey === "tag") {
             const tag = contact.Tag;
-            console.log("🟡 Raw tag from Zoho:", tag);
+            logger.info("🟡 Raw tag from Zoho:", tag);
 
             if (!Array.isArray(tag) || tag.length === 0) {
-              console.warn(
+              logger.warn(
                 `⚠️ No valid linkedinConnected found for ${contact.Email}`
               );
               properties[hubspotKey] = ""; // ✅ Send empty string if no tags
             } else {
               properties[hubspotKey] = tag.join(";");
-              console.log(`🟡 Mapped tag: ${properties[hubspotKey]}`);
+              logger.info(`🟡 Mapped tag: ${properties[hubspotKey]}`);
             }
           } else {
             properties[hubspotKey] = value;
@@ -613,7 +591,7 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
         }
       }
       // Add Zoho Lead ID manually
-      properties["zoho_lead_id"] = contact.Owner?.id;
+      properties["zoho_lead_id"] = contact.id;
       properties["ownerid"] = contact.Owner?.id;
       const bdrId = contact.BDR_Owner?.id || "DEFAULT_BDR_ID";
       properties["zoho_bdr_id"] = bdrId;
@@ -648,9 +626,10 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
       if (mappedStatus) {
         properties["lead_contact_status"] = mappedStatus;
       } else {
-        console.warn(
+        logger.warn(
           `⚠️ Skipping invalid lead_contact_status "${zohoStatus}" for ${contact.Email}`
         );
+        // properties["lead_contact_status"] = 'NONE';
       }
 
       const zohoMeetingScheduled = contact.Meeting_scheduled;
@@ -660,9 +639,11 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
         if (mapped) {
           properties["meeting_scheduled"] = mapped;
         } else {
-          console.warn(
+          logger.warn(
             `⚠️ Invalid meeting_scheduled "${zohoMeetingScheduled}" for ${contact.Email}`
           );
+          // properties["meeting_scheduled"] = '-None-';
+
         }
       }
 
@@ -672,9 +653,10 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
       if (mappedLeadSource) {
         properties["lead_source"] = mappedLeadSource;
       } else {
-        console.warn(
+        logger.warn(
           `⚠️ Skipping invalid lead_contact_status "${zohoLeadSource}" for ${contact.Email}`
         );
+        // properties["lead_source"] = '-None-';
       }
       const leadSourceType = contact.Lead_Source_Type;
       const mappedSourceType =
@@ -682,9 +664,11 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
       if (mappedSourceType) {
         properties["lead_source_type"] = mappedSourceType;
       } else {
-        console.warn(
+        logger.warn(
           `⚠️ Skipping invalid lead_source_type "${leadSourceType}" for ${contact.Email}`
         );
+        // properties["lead_source_type"] = '-None-';
+
       }
       const zohoLeadStage = contact.Lead_Stage;
       const normalizedLeadStage = String(zohoLeadStage)
@@ -692,20 +676,18 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
         .toLowerCase()
         .replace(/\b\w/g, (c) => c.toUpperCase());
       const mappedLeadStage = leadStageMap[normalizedLeadStage];
-      console.log("🟡 Mapped lead_stage (custom)----------:", mappedLeadStage);
       if (mappedLeadStage) {
         properties["lead_stage"] = mappedLeadStage;
       } else {
-        console.warn(
+        logger.warn(
           `⚠️ Skipping invalid lead_stage "${zohoLeadStage}" for ${contact.Email}`
         );
+        properties["lead_stage"] = '-None-';
       }
       // Send to HubSpot
-      const payload = { properties };
-      console.log(
-        `📩 Sending contact ${contact.Email} to HubSpot with payload:`,
-        payload
-      );
+      payload = { properties };
+      logger.info(
+        `📩 Sending contact ${contact.Email} to HubSpot with payload`);
       if (existingId) {
         await axios.patch(
           `https://api.hubapi.com/crm/v3/objects/contacts/${existingId}`,
@@ -718,9 +700,8 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
           }
         );
 
-        console.log(`✅ Updated contact ${contact.Email}`);
+        logger.info(`✅ Updated contact ${contact.Email}`);
       } else {
-        console.log("enter");
         const response = await axios.post(
           `https://api.hubapi.com/crm/v3/objects/contacts`,
           payload,
@@ -731,35 +712,17 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
             },
           }
         );
-        // console.log("response", response.data);
-        console.log(`✅ Created contact ${contact.Email}`);
+        logger.info(`✅ Created contact ${contact.Email}`);
       }
     } catch (err) {
       let errorMessage;
       if (err.response && err.response.data) {
-        console.log("error", err.response.data);
-        console.log("err", err.res);
-
         errorMessage = JSON.stringify(err.response.data, null, 2);
       } else {
         errorMessage = err.message;
-        console.error(`❌ Error syncing ${contact.Email}: ${errorMessage}`);
       }
-      errorLogs.push({
-        contactId: contact.id,
-        email: contact.Email,
-        error: errorMessage,
-      });
+      logger.error(`❌ Error syncing ${contact.Email}`, errorMessage, payload, 'contact');
     }
-  }
-  if (errorLogs.length > 0) {
-    fs.writeFileSync(
-      CONTACT_ERROR_LOG_FILE,
-      JSON.stringify(errorLogs, null, 2)
-    );
-    console.log(
-      `📁 Logged ${errorLogs.length} contact sync errors to ${CONTACT_ERROR_LOG_FILE}`
-    );
   }
 }
 
