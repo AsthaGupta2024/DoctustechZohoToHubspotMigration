@@ -24,6 +24,20 @@ const NOTES_LOG_FILE = "zoho_contact_notes_log.json";
 const TICKET_LOG_FILE = "zoho_ticket_log.json";
 let currentZohoAccessToken = null;
 
+const ownerMap = {
+    "4582160000000345001": "159204991",
+    "4582160000004959003": "80824882",
+    "4582160000045940001": "8694909",
+    "4582160000101626001": "80824914",
+    "4582160000042163001": "80824899",
+    "4582160000094628001": "80824910",
+    "4582160000095047001": "80824912",
+    "4582160000148081001": "80824922",
+    "4582160000155894001": "80824924",
+    "4582160000176507001": "71568951",
+    "4582160000172588001": "159920691"
+}
+
 const HUBSPOT_ACCESS_TOKEN = process.env.DESTINATION_ACCESS_TOKEN;
 function normalizeLabel(label) {
   return label
@@ -265,7 +279,7 @@ app.get("/zoho/contacts", async (req, res) => {
       console.log(`📄 Fetching page: ${page}`);
 
       const url = `https://www.zohoapis.com/crm/v2/Contacts?per_page=5&page=${page}`;
-      // const url = "https://www.zohoapis.com/crm/v2/Contacts/4582160000102983007";
+      // const url = "https://www.zohoapis.com/crm/v2/Contacts/4582160000099350086";
 
        const contactRes = await zohoApiRequest({
         method: "get",
@@ -461,11 +475,7 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
   for (const contact of zohoContacts) {
     let payload = {};
     try {
-      if (!contact.Email) continue;
-      const existingId = await hsHelpers.searchContactInHubSpot(contact.Email);
-      logger.info(
-        `🔍 Searching for existing contact with email: ${contact.Email}`
-      );
+      // if (!contact.Email) continue;
       const properties = {};
       for (const [zohoKey, hubspotKeyOriginal] of Object.entries(fieldMap)) {
         if (hubspotKeyOriginal === "lead_stage") {
@@ -632,6 +642,15 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
         // properties["lead_contact_status"] = 'NONE';
       }
 
+
+
+      const hsBDROwnerId = ownerMap[bdrId];
+      if(hsBDROwnerId){
+        properties['zoho_bdr_owner'] = hsBDROwnerId;
+      }
+      const hsOwnerId = ownerMap[properties.ownerid]||"80824899";
+      properties['hubspot_owner_id'] = hsOwnerId;
+
       const zohoMeetingScheduled = contact.Meeting_scheduled;
       if (zohoMeetingScheduled) {
         const normalized = String(zohoMeetingScheduled).trim().toLowerCase();
@@ -686,22 +705,31 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
       }
       // Send to HubSpot
       payload = { properties };
+      
       logger.info(
         `📩 Sending contact ${contact.Email} to HubSpot with payload`);
-      if (existingId) {
-        await axios.patch(
-          `https://api.hubapi.com/crm/v3/objects/contacts/${existingId}`,
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+      if (contact.Email) {
+      logger.info(`🔍 Searching for existing contact with email: ${contact.Email}`);
+      const existingId = await hsHelpers.searchContactInHubSpot(contact.Email);
 
-        logger.info(`✅ Updated contact ${contact.Email}`);
+        if(existingId){
+          await axios.patch(
+            `https://api.hubapi.com/crm/v3/objects/contacts/${existingId}`,
+            {properties:{"contact_id_zoho": contact.id}},
+            {
+              headers: {
+                Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          logger.info(`✅ Updated contact ${contact.Email}`);
+        }else{
+          logger.warn(`Contact email is not valid email:- ${contact.Email} and `)
+        }
+
       } else {
+        payload.properties["contact_id_zoho"] = contact.id;
         const response = await axios.post(
           `https://api.hubapi.com/crm/v3/objects/contacts`,
           payload,
@@ -712,7 +740,7 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
             },
           }
         );
-        logger.info(`✅ Created contact ${contact.Email}`);
+        logger.info(`✅ Created contact ${contact.Email} and id:- ${contact.id}`);
       }
     } catch (err) {
       let errorMessage;
@@ -897,7 +925,7 @@ app.get("/zoho/leads", async (req, res) => {
       logger.info(`Fetching page: ${page}`);
 
       // const url = `https://www.zohoapis.com/crm/v2/Leads?per_page=5&page=${page}`;
-      const url = "https://www.zohoapis.com/crm/v2/Leads/4582160000177951014";
+      const url = "https://www.zohoapis.com/crm/v2/Leads/4582160000174767041";
 
        const contactRes = await zohoApiRequest({
         method: "get",
@@ -981,7 +1009,7 @@ async function syncLeadContactsToHubSpot(zohoContacts, fieldMap, objectType) {
     relationship: "Relationship",
     "demo account": "Demo Account",
     "app free trial": "APP_FREE_TRIAL",
-    awareness: "AWARENESS",
+    awareness: "Awareness",
     casestudydoctustechhelpsboostrafaccuracy: "CASESTUDY",
     "changes between hcc v24 and hcc v28": "VERSION_CHANGES",
     "cold call": "COLD_CALL",
@@ -990,7 +1018,7 @@ async function syncLeadContactsToHubSpot(zohoContacts, fieldMap, objectType) {
     "demo account user": "DEMO_USER",
     discovery: "DISCOVERY",
     "ebook measuring the value of value-based care": "EBOOK_VALUE_CARE",
-    email: "EMAIL", // 👈 this one matches now
+    email: "Email", // 👈 this one matches now
     "existing customer": "EXISTING_CUSTOMER",
     "facebook ads": "FACEBOOK_ADS",
     "hcc audits compliance": "HCC_COMPLIANCE",
@@ -1018,12 +1046,12 @@ async function syncLeadContactsToHubSpot(zohoContacts, fieldMap, objectType) {
     "roi calculator": "ROI_Calculator",
     schedule_a_demo: "SCHEDULE1_A_DEMO",
     scupdap: "SCUPDAP",
-    seamless: "SEAMLESS",
+    seamless: "Seamless",
     "site contact us": "SITE_CONTACT_US",
-    tradeshow: "TRADESHOW",
+    tradeshow: "Tradeshow",
     "visitor insites": "VISITOR_INSITES",
     webinar: "WEBINAR",
-    zoominfo: "ZOOMINFO",
+    zoominfo: "ZoomInfo",
     warm: "WARM",
   };
   const leadSourceTypeMap = {
@@ -1059,9 +1087,7 @@ async function syncLeadContactsToHubSpot(zohoContacts, fieldMap, objectType) {
 
     let payload = {};
     try {
-      if (!contact.Email) continue;
-      logger.info(`searching contact via email:- ${contact.Email}`);
-      let existingId = await hsHelpers.searchContactInHubSpot(contact.Email);
+      // if (!contact.Email) continue;
       const properties = {};  
       for (const [zohoKey, hubspotKeyOriginal] of Object.entries(fieldMap)) {
         if (hubspotKeyOriginal === "lead_stage") {
@@ -1229,6 +1255,14 @@ async function syncLeadContactsToHubSpot(zohoContacts, fieldMap, objectType) {
       properties["lead_source_type"] = contact.Lead_Source_Bucket;
       properties["object_status"] = objectType;
 
+
+      const hsBDROwnerId = ownerMap[bdrId];
+      if(hsBDROwnerId){
+        properties['zoho_bdr_owner'] = hsBDROwnerId;
+      }
+      const hsOwnerId = ownerMap[properties.lead_owner]||"80824899";
+      properties['hubspot_owner_id'] = hsOwnerId;
+
       //Lead status mapping
       const zohoStatusvalue = contact.Lead_Status;
       const leadStatusvalue =
@@ -1263,21 +1297,29 @@ async function syncLeadContactsToHubSpot(zohoContacts, fieldMap, objectType) {
       // console.log(`payload ${payload}`);
       logger.info(`📩 Sending contact ${contact.Email} to HubSpot with payload:`);
       
-      if (existingId) {
-        await axios.patch(
-          `https://api.hubapi.com/crm/v3/objects/contacts/${existingId}`,
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+      let existingId = null;
+      if (contact.Email) {
+        logger.info(`searching contact via email:- ${contact.Email}`);
+        existingId = await hsHelpers.searchContactInHubSpot(contact.Email);
+        if(existingId){
+          await axios.patch(
+            `https://api.hubapi.com/crm/v3/objects/contacts/${existingId}`,
+            {properties:{"lead_id_zoho":contact.id}},
+            {
+              headers: {
+                Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
 
-        logger.info(`✅ Updated contact ${contact.Email}`);
-      } else {
+          logger.info(`✅ Updated contact ${contact.Email}`);
+        }else{
+          logger.warn(`the following record have invalid email leadid:- ${contact.id}, email:- ${contact.Email}`);
+        }
+      } else{
         console.log("create");
+        payload.properties["lead_id_zoho"] = contact.id;
         const response = await axios.post(
           `https://api.hubapi.com/crm/v3/objects/contacts`,
           payload,
@@ -1293,7 +1335,9 @@ async function syncLeadContactsToHubSpot(zohoContacts, fieldMap, objectType) {
         console.log(`✅ Created contact ${contact.Email}`);
       }
       // Create Lead for this contact
-      await createLeadForContact(contact, existingId);
+      if(existingId){
+        await createLeadForContact(contact, existingId);
+      }
       // Process notes for contacts
       // const notes = await activities.processNotesForContacts("leads",contact, access_token, existingId);
       // const tasks = await activities.processTasksForContacts(
@@ -1312,7 +1356,7 @@ async function syncLeadContactsToHubSpot(zohoContacts, fieldMap, objectType) {
         errorMessage = err.message;
         message = err.message;
       }
-      logger.error(message, errorMessage, payload, 'contact');
+      logger.error(message, errorMessage, payload, 'lead');
     }
   }
 
@@ -1582,6 +1626,15 @@ async function syncDealsToHubSpot(zohoDeals, fieldMap) {
       properties["account_id"] = deals.Account_Name?.id;
       logger.info(
         `✅ Added property: account_id = "${deals.Account_Name?.id}"`
+      );
+      properties["contact_id"] = deals.Contact_Name?.id;
+      logger.info(
+        `✅ Added property: contact_id = "${deals.Contact_Name?.id}"`
+      );
+      properties["contact_name"] = deals.Contact_Name?.name;
+
+      logger.info(
+        `✅ Added property: contact_id = "${deals.Contact_Name?.name}"`
       );
       properties["account_name"] = deals.Account_Name?.name;
       logger.info(
@@ -2050,7 +2103,7 @@ app.get("/zoho/accounts", async (req, res) => {
 
     // const url = `https://www.zohoapis.com/crm/v2/Leads?per_page=5&page=${page}`;
     // const url = "https://www.zohoapis.com/crm/v2/Accounts/4582160000171491017";
-    const url = "https://www.zohoapis.com/crm/v2/Accounts/4582160000116722036";
+    const url = "https://www.zohoapis.com/crm/v2/Accounts/4582160000036802001";
 
     const accountRes = await axios.get(url, {
       headers: {
