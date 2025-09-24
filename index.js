@@ -16,6 +16,7 @@ const FormData = require("form-data");
 const path = require("path");
 const fs = require("fs");
 const logger = require("./src/utils/logger.js");
+const hubspotService = require("./src/services/hubspotService.js");
 
 const DESTINATION_ACCESS_TOKEN = process.env.DESTINATION_ACCESS_TOKEN;
 const CONTACT_ERROR_LOG_FILE = path.join(__dirname, "contact-sync-errors.json");
@@ -233,14 +234,14 @@ async function fetchHubSpotFieldMap(objecttype) {
 
 // 3. Build dynamic map: Zoho API name ➜ HubSpot API name
 async function buildFieldMap() {
-  // const zohoFields = await fetchZohoFieldMap("Leads"); // { normalized_label: zohoApiName }
-  // const hubspotFields = await fetchHubSpotFieldMap("contacts"); // { normalized_label: hubspotApiName }
+  const zohoFields = await fetchZohoFieldMap("Leads"); // { normalized_label: zohoApiName }
+  const hubspotFields = await fetchHubSpotFieldMap("contacts"); // { normalized_label: hubspotApiName }
 
   // const zohoFields = await fetchZohoFieldMap("Deals"); // { normalized_label: zohoApiName }
   // const hubspotFields = await fetchHubSpotFieldMap("deals"); // { normalized_label: hubspotApiName }
 
-  const zohoFields = await fetchZohoFieldMap("Contacts"); // { normalized_label: zohoApiName }
-  const hubspotFields = await fetchHubSpotFieldMap("contacts"); // { normalized_label: hubspotApiName }
+  // const zohoFields = await fetchZohoFieldMap("Contacts"); // { normalized_label: zohoApiName }
+  // const hubspotFields = await fetchHubSpotFieldMap("contacts"); // { normalized_label: hubspotApiName }
 
   const dynamicMap = {};
   const unmatchedFields = [];
@@ -666,29 +667,29 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
         }
       }
 
-      const zohoLeadSource = contact.Lead_Source;
-      const mappedLeadSource =
-        leadSourceMap[String(zohoLeadSource).toLowerCase()];
-      if (mappedLeadSource) {
-        properties["lead_source"] = mappedLeadSource;
-      } else {
-        logger.warn(
-          `⚠️ Skipping invalid lead_contact_status "${zohoLeadSource}" for ${contact.Email}`
-        );
-        // properties["lead_source"] = '-None-';
-      }
-      const leadSourceType = contact.Lead_Source_Type;
-      const mappedSourceType =
-        leadSourceTypeMap[String(leadSourceType).toLowerCase()];
-      if (mappedSourceType) {
-        properties["lead_source_type"] = mappedSourceType;
-      } else {
-        logger.warn(
-          `⚠️ Skipping invalid lead_source_type "${leadSourceType}" for ${contact.Email}`
-        );
-        // properties["lead_source_type"] = '-None-';
+      // const zohoLeadSource = contact.Lead_Source;
+      // const mappedLeadSource =
+      //   leadSourceMap[String(zohoLeadSource).toLowerCase()];
+      // if (mappedLeadSource) {
+      //   properties["lead_source"] = mappedLeadSource;
+      // } else {
+      //   logger.warn(
+      //     `⚠️ Skipping invalid lead_contact_status "${zohoLeadSource}" for ${contact.Email}`
+      //   );
+      //   // properties["lead_source"] = '-None-';
+      // }
+      // const leadSourceType = contact.Lead_Source_Type;
+      // const mappedSourceType =
+      //   leadSourceTypeMap[String(leadSourceType).toLowerCase()];
+      // if (mappedSourceType) {
+      //   properties["lead_source_type"] = mappedSourceType;
+      // } else {
+      //   logger.warn(
+      //     `⚠️ Skipping invalid lead_source_type "${leadSourceType}" for ${contact.Email}`
+      //   );
+      //   // properties["lead_source_type"] = '-None-';
 
-      }
+      // }
       const zohoLeadStage = contact.Lead_Stage;
       const normalizedLeadStage = String(zohoLeadStage)
         .trim()
@@ -708,27 +709,36 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
       
       logger.info(
         `📩 Sending contact ${contact.Email} to HubSpot with payload`);
-      if (contact.Email) {
-      logger.info(`🔍 Searching for existing contact with email: ${contact.Email}`);
-      const existingId = await hsHelpers.searchContactInHubSpot(contact.Email);
+      // start new 
+       const updatePayload = {properties:{"lead_source": properties.lead_source, "lead_source_type": properties.lead_source_type}}
+      let existingId = null;
 
-        if(existingId){
-          await axios.patch(
-            `https://api.hubapi.com/crm/v3/objects/contacts/${existingId}`,
-            {properties:{"contact_id_zoho": contact.id}},
-            {
-              headers: {
-                Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-          logger.info(`✅ Updated contact ${contact.Email}`);
-        }else{
-          logger.warn(`Contact email is not valid email:- ${contact.Email} and `)
-        }
+      if(contact.Email){
+        logger.info(`searching contact via email:- ${contact.Email}`);
+        existingId = await hsHelpers.searchContactInHubSpot(contact.Email);
+      }
 
-      } else {
+      if(!existingId){
+        logger.info(`searching contact via contact_id_zoho:- ${contact.id}`);
+        const existingrecord = await hubspotService.findObjectDataByPropertyAndValue('contacts', 'contact_id_zoho', contact.id, ['contact_id_zoho']);
+        if(existingrecord)
+          existingId = existingrecord.id;
+      }
+      if (existingId) {
+        await axios.patch(
+          `https://api.hubapi.com/crm/v3/objects/contacts/${existingId}`,
+          updatePayload,
+          {
+            headers: {
+              Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        logger.info(`✅ Updated contact ${contact.Email}`);
+      }else{
+        logger.info(`Creating a new record at contact_id_zoho:- ${contact.id}`);
         payload.properties["contact_id_zoho"] = contact.id;
         const response = await axios.post(
           `https://api.hubapi.com/crm/v3/objects/contacts`,
@@ -740,8 +750,11 @@ async function syncContactsToHubSpot(zohoContacts, fieldMap, objectType) {
             },
           }
         );
+         existingId = response.data.id;
+        // console.log("response", response.data);
         logger.info(`✅ Created contact ${contact.Email} and id:- ${contact.id}`);
       }
+
     } catch (err) {
       let errorMessage;
       if (err.response && err.response.data) {
@@ -924,8 +937,8 @@ app.get("/zoho/leads", async (req, res) => {
     while (moreRecords) {
       logger.info(`Fetching page: ${page}`);
 
-      // const url = `https://www.zohoapis.com/crm/v2/Leads?per_page=5&page=${page}`;
-      const url = "https://www.zohoapis.com/crm/v2/Leads/4582160000174767041";
+      const url = `https://www.zohoapis.com/crm/v2/Leads?per_page=5&page=${page}`;
+      // const url = "https://www.zohoapis.com/crm/v2/Leads/4582160000180601002";
 
        const contactRes = await zohoApiRequest({
         method: "get",
@@ -1000,59 +1013,52 @@ async function syncLeadContactsToHubSpot(zohoContacts, fieldMap, objectType) {
     "-None-": "-None-",
   };
   const leadSourceMap = {
-    "-none-": "-None-",
-    growth: "Growth",
-    organic: "Organic",
-    outbound: "Outbound",
-    "inside sales": "Inside Sales",
-    ppc: "PPC",
-    relationship: "Relationship",
-    "demo account": "Demo Account",
-    "app free trial": "APP_FREE_TRIAL",
-    awareness: "Awareness",
-    casestudydoctustechhelpsboostrafaccuracy: "CASESTUDY",
-    "changes between hcc v24 and hcc v28": "VERSION_CHANGES",
-    "cold call": "COLD_CALL",
-    "cold linkedin outreach": "LINKEDIN_OUTREACH",
-    "compliance sme interview": "COMPLIANCE_INTERVIEW",
-    "demo account user": "DEMO_USER",
-    discovery: "DISCOVERY",
-    "ebook measuring the value of value-based care": "EBOOK_VALUE_CARE",
-    email: "Email", // 👈 this one matches now
-    "existing customer": "EXISTING_CUSTOMER",
-    "facebook ads": "FACEBOOK_ADS",
-    "hcc audits compliance": "HCC_COMPLIANCE",
-    "hcc quick guide": "HCC_GUIDE",
-    "integrated platform contact": "INTEGRATED_CONTACT",
-    "lead gen form": "LEAD_GEN_FORM",
-    "learn about app": "LEARN_ABOUT_APP",
-    "learn more - performance max campaign": "PERFORMANCE_MAX",
-    "learn with app": "LEARN_APP",
-    "learn with doctus": "LEARN_DOCTUS",
-    "learn with doctustech": "LEARN_DOCTUSTECH",
-    "learn with mobile app": "LEARN_MOBILE_APP",
-    "linkedin ads": "LINKEDIN_ADS",
-    "linkedin form": "LINKEDIN_FORM",
-    "linkedin sales search": "LINKEDIN_SALES_SEARCH",
-    "ob aco": "OB_ACO",
-    "ob athena": "OB_ATHENA",
-    "ob persona": "OB_PERSONA",
-    "ob re-engaged": "OB_RE-ENGAGED",
-    "personal network": "PERSONAL_NETWORK",
-    "radv whitepaper": "RADV_WHITEPAPER",
-    "raf revenue calculator": "RAF_REVENUE_CALCULATOR",
-    referral: "REFERRAL",
-    "risk adjustment one pager": "RISK_ADJUSTMENT_ONE_PAGER",
-    "roi calculator": "ROI_Calculator",
-    schedule_a_demo: "SCHEDULE1_A_DEMO",
-    scupdap: "SCUPDAP",
-    seamless: "Seamless",
-    "site contact us": "SITE_CONTACT_US",
-    tradeshow: "Tradeshow",
-    "visitor insites": "VISITOR_INSITES",
-    webinar: "WEBINAR",
-    zoominfo: "ZoomInfo",
-    warm: "WARM",
+    "-None-": "-None-",
+    "App Free Trial": "App Free Trial",
+    "Awareness": "Awareness",
+    "CasestudyDoctusTechHelpsboostRAFaccuracy": "CasestudyDoctusTechHelpsboostRAFaccuracy",
+    "Changes between HCC V24 and HCC V28": "Changes between HCC V24 and HCC V28",
+    "Cold Call": "Cold Call",
+    "Cold LinkedIn Outreach": "Cold LinkedIn Outreach",
+    "Compliance SME interview": "Compliance SME interview",
+    "Demo Account User": "Demo Account User",
+    "Discovery": "Discovery",
+    "Ebook Measuring the value of value-based care": "Ebook Measuring the value of value-based care",
+    "Email": "Email",
+    "Existing Customer": "Existing Customer",
+    "Facebook Ads": "Facebook Ads",
+    "Growth": "Growth",
+    "HCC Audits Compliance": "HCC Audits Compliance",
+    "HCC QUICK GUIDE": "HCC QUICK GUIDE",
+    "INTEGRATED PLATFORM CONTACT": "INTEGRATED PLATFORM CONTACT",
+    "Lead Gen Form": "Lead Gen Form",
+    "Learn About App": "Learn About App",
+    "Learn More - Performance Max Campaign": "Learn More - Performance Max Campaign",
+    "LEARN WITH APP": "LEARN WITH APP",
+    "LEARN WITH DOCTUS": "LEARN WITH DOCTUS",
+    "LEARN WITH DOCTUSTECH": "LEARN WITH DOCTUSTECH",
+    "LEARN WITH MOBILE APP": "LEARN WITH MOBILE APP",
+    "Linkedin Ads": "Linkedin Ads",
+    "LINKEDIN FORM": "LINKEDIN FORM",
+    "LinkedIn Sales Search": "LinkedIn Sales Search",
+    "OB ACO": "OB ACO",
+    "OB Athena": "OB Athena",
+    "OB Persona": "OB Persona",
+    "OB Re-Engaged": "OB Re-Engaged",
+    "Personal Network": "Personal Network",
+    "RADV WHITEPAPER": "RADV WHITEPAPER",
+    "RAF revenue calculator": "RAF revenue calculator",
+    "Referral": "Referral",
+    "Risk adjustment one pager": "Risk adjustment one pager",
+    "ROI Calculator": "ROI Calculator",
+    "SCHEDULE A DEMO": "SCHEDULE A DEMO",
+    "SCU PDAP": "SCU PDAP",
+    "Seamless": "Seamless",
+    "SITE CONTACT US": "SITE CONTACT US",
+    "Tradeshow": "Tradeshow",
+    "Visitor InSites": "Visitor InSites",
+    "Webinar": "Webinar",
+    "ZoomInfo": "ZoomInfo"
   };
   const leadSourceTypeMap = {
     "-none-": "-None-",
@@ -1280,45 +1286,51 @@ async function syncLeadContactsToHubSpot(zohoContacts, fieldMap, objectType) {
       }
 
       // Add lead_source from Lead_Source map
-      const zohoLeadSource = contact.Lead_Source;
-      const mappedLeadSource =
-        leadSourceMap[String(zohoLeadSource).toLowerCase()];
-      if (mappedLeadSource) {
-        properties["lead_source"] = mappedLeadSource;
-      } else {
-        logger.warn(
-          `⚠️ Skipping invalid lead_contact_status "${zohoLeadSource}" for ${contact.Email}`
-        );
-        properties["lead_source"] = '-None-';
-      }
+      // const zohoLeadSource = contact.Lead_Source;
+      // const mappedLeadSource =
+      //   leadSourceMap[zohoLeadSource];
+      // if (mappedLeadSource) {
+      //   properties["lead_source"] = mappedLeadSource;
+      // } else {
+      //   logger.warn(
+      //     `⚠️ Skipping invalid lead_contact_status "${zohoLeadSource}" for ${contact.Email}`
+      //   );
+      //   properties["lead_source"] = '-None-';
+      // }
 
       // Send to HubSpot
       payload = { properties };
       // console.log(`payload ${payload}`);
       logger.info(`📩 Sending contact ${contact.Email} to HubSpot with payload:`);
-      
+      const updatePayload = {properties:{"lead_source": properties.lead_source, "lead_source_type": properties.lead_source_type}}
       let existingId = null;
-      if (contact.Email) {
+
+      if(contact.Email){
         logger.info(`searching contact via email:- ${contact.Email}`);
         existingId = await hsHelpers.searchContactInHubSpot(contact.Email);
-        if(existingId){
-          await axios.patch(
-            `https://api.hubapi.com/crm/v3/objects/contacts/${existingId}`,
-            {properties:{"lead_id_zoho":contact.id}},
-            {
-              headers: {
-                Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
+      }
 
-          logger.info(`✅ Updated contact ${contact.Email}`);
-        }else{
-          logger.warn(`the following record have invalid email leadid:- ${contact.id}, email:- ${contact.Email}`);
-        }
-      } else{
-        console.log("create");
+      if(!existingId){
+        logger.info(`searching contact via lead_id_zoho:- ${contact.id}`);
+        const existingrecord = await hubspotService.findObjectDataByPropertyAndValue('contacts', 'lead_id_zoho', contact.id, ['lead_id_zoho']);
+        if(existingrecord)
+          existingId = existingrecord.id;
+      }
+      if (existingId) {
+        await axios.patch(
+          `https://api.hubapi.com/crm/v3/objects/contacts/${existingId}`,
+          updatePayload,
+          {
+            headers: {
+              Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        logger.info(`✅ Updated contact ${contact.Email}`);
+      }else{
+        logger.info(`Creating a new record at lead_id_zoho:- ${contact.id}`);
         payload.properties["lead_id_zoho"] = contact.id;
         const response = await axios.post(
           `https://api.hubapi.com/crm/v3/objects/contacts`,
